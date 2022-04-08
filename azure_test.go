@@ -37,7 +37,8 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// create. Ensure that these names are not already taken - check the resource group names to double check :) As Resource group name
 	// is based on the cluster name
 
-	// Hard code the value of the inputs required / needed / necessary for accepting Azure VM image license / terms
+	// Hard code the value of the inputs required / needed / necessary for accepting Azure VM image license / terms.
+	// TODO: management-cluster / workload cluster dry run (--dry-run) to get Azure VM image names / skus, offering, publisher
 
 	// Accept the VM image license / terms
 }
