@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -26,6 +27,10 @@ type AzureTestSecrets struct {
 }
 
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
+	if runtime.GOOS == "windows" || runtime.GOOS == "linux" {
+		log.Println("Warning: This test has been tested only on Mac OS till now. Support for Linux and Windows has not been tested, so it's experimental and not guranteed to work!")
+	}
+
 	// Ensure TCE/TF is installed - check TCE installation or install it if not present. Or do it prior to the test run.
 
 	// Ensure management and workload cluster plugins are present.
