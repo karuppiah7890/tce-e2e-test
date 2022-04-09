@@ -75,6 +75,34 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 
+	acceptImageLicense(azureTestSecrets, cred)
+}
+
+func checkRequiredEnvVars(requiredEnvVars []string) []error {
+	errors := make([]error, 0, len(requiredEnvVars))
+	for _, envVar := range requiredEnvVars {
+		// TODO: Do we also error out when the env var value is defined but empty??
+		_, isDefined := os.LookupEnv(envVar)
+
+		if !isDefined {
+			errors = append(errors, fmt.Errorf("Environment variable `%s` is required but not defined", envVar))
+		}
+	}
+
+	return errors
+}
+
+func extractAzureTestSecretsFromEnvVars() AzureTestSecrets {
+	return AzureTestSecrets{
+		TenantID:       os.Getenv(AzureTenantIDEnvVarName),
+		SubscriptionID: os.Getenv(AzureSubscriptionIDEnvVarName),
+		ClientID:       os.Getenv(AzureClientIDEnvVarName),
+		ClientSecret:   os.Getenv(AzureClientSecretEnvVarName),
+		SshPublicKey:   os.Getenv(AzureSshPublicKeyBase64EnvVarName),
+	}
+}
+
+func acceptImageLicense(azureTestSecrets AzureTestSecrets, cred *azidentity.ClientSecretCredential) {
 	azureVmImagePublisher := "vmware-inc"
 	// The value k8s-1dot21dot5-ubuntu-2004 comes from latest TKG BOM file based on OS arch, OS name and OS version
 	// provided in test/azure/cluster-config.yaml in TCE repo. This value needs to be changed manually whenever there's going to
@@ -135,29 +163,5 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		} else {
 			log.Println("Accepted the Azure VM image agreement terms!")
 		}
-	}
-}
-
-func checkRequiredEnvVars(requiredEnvVars []string) []error {
-	errors := make([]error, 0, len(requiredEnvVars))
-	for _, envVar := range requiredEnvVars {
-		// TODO: Do we also error out when the env var value is defined but empty??
-		_, isDefined := os.LookupEnv(envVar)
-
-		if !isDefined {
-			errors = append(errors, fmt.Errorf("Environment variable `%s` is required but not defined", envVar))
-		}
-	}
-
-	return errors
-}
-
-func extractAzureTestSecretsFromEnvVars() AzureTestSecrets {
-	return AzureTestSecrets{
-		TenantID:       os.Getenv(AzureTenantIDEnvVarName),
-		SubscriptionID: os.Getenv(AzureSubscriptionIDEnvVarName),
-		ClientID:       os.Getenv(AzureClientIDEnvVarName),
-		ClientSecret:   os.Getenv(AzureClientSecretEnvVarName),
-		SshPublicKey:   os.Getenv(AzureSshPublicKeyBase64EnvVarName),
 	}
 }
