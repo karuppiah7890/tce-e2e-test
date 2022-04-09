@@ -75,6 +75,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Fatalf("failed to obtain a credential: %v", err)
 	}
 
+	// TODO: make the below function return an error and handle the error to log and exit?
 	acceptImageLicense(azureTestSecrets, cred)
 }
 
