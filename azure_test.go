@@ -63,9 +63,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// managementClusterName := "test-mgmt"
 	// workloadClusterName := "test-wkld"
 
-	// Hard code the value of the inputs required / needed / necessary for accepting Azure VM image license / terms.
-	// TODO: management-cluster / workload cluster dry run (--dry-run) to get Azure VM image names / skus, offering, publisher
-
 	log.Println("Logging into Azure...")
 	// login to azure
 	cred, err :=
@@ -104,6 +101,8 @@ func extractAzureTestSecretsFromEnvVars() AzureTestSecrets {
 }
 
 func acceptImageLicense(azureTestSecrets AzureTestSecrets, cred *azidentity.ClientSecretCredential) {
+	// We have hardcoded the value of the inputs required for accepting Azure VM image license terms.
+	// TODO: Use management-cluster / workload cluster dry run (--dry-run) to get Azure VM image names / skus, offering, publisher
 	azureVmImagePublisher := "vmware-inc"
 	// The value k8s-1dot21dot5-ubuntu-2004 comes from latest TKG BOM file based on OS arch, OS name and OS version
 	// provided in test/azure/cluster-config.yaml in TCE repo. This value needs to be changed manually whenever there's going to
