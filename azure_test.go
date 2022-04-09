@@ -80,13 +80,13 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// provided in test/azure/cluster-config.yaml in TCE repo. This value needs to be changed manually whenever there's going to
 	// be a change in the underlying Tanzu Framework CLI version (management-cluster and cluster plugins) causing new
 	// TKr BOMs to be used with new Azure VM images which have different image billing plan SKU
-	azureVmImageBillingPlanSku := "k8s-1dot21dot5-ubuntu-2004"
+	azureVmImageBillingPlanSku := "k8s-1dot22dot8-ubuntu-2004"
 	azureVmImageOffer := "tkg-capi"
 
 	ctx := context.Background()
 	client := armmarketplaceordering.NewMarketplaceAgreementsClient(azureTestSecrets.SubscriptionID, cred, nil)
 
-	log.Println("Getting marketplace terms...")
+	log.Println("Getting marketplace terms for Azure VM image...")
 	res, err := client.Get(ctx,
 		armmarketplaceordering.OfferType(armmarketplaceordering.OfferTypeVirtualmachine),
 		azureVmImagePublisher,
@@ -94,11 +94,48 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		azureVmImageBillingPlanSku,
 		nil)
 	if err != nil {
-		log.Fatalf("Error while getting marketplace terms: %+v", err)
+		log.Fatalf("Error while getting marketplace terms for Azure VM image: %+v", err)
 	}
-	log.Printf("Response result: %#v\n", res.MarketplaceAgreementsClientGetResult)
 
-	// Accept the VM image license / terms
+	agreementTerms := res.MarketplaceAgreementsClientGetResult.AgreementTerms
+
+	if agreementTerms.Properties == nil {
+		log.Fatalf("Error: Azure VM image agreement terms Properties field is not available")
+	}
+
+	if agreementTerms.Properties.Accepted == nil {
+		log.Fatalf("Error: Azure VM image agreement terms Properties Accepted field is not available")
+	}
+
+	if isTermsAccepted := *agreementTerms.Properties.Accepted; isTermsAccepted {
+		log.Println("Azure VM image agreement terms are already accepted")
+	} else {
+		log.Println("Azure VM image agreement terms is not already accepted. Accepting the Azure VM image agreement terms now...")
+
+		*agreementTerms.Properties.Accepted = true
+		// Note: We sign using a PUT request to change the `accepted` property in the agreement. This is how Azure CLI does it too.
+		// This is because the sign API does not work as of this comment. Reference - https://docs.microsoft.com/en-us/answers/questions/52637/cannot-sign-azure-marketplace-vm-image-licence-thr.html
+		createResponse, err := client.Create(ctx, armmarketplaceordering.OfferTypeVirtualmachine, azureVmImagePublisher, azureVmImageOffer, azureVmImageBillingPlanSku, agreementTerms, nil)
+		if err != nil {
+			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: %+v", err)
+		}
+
+		signedAgreementTerms := createResponse.AgreementTerms
+
+		if signedAgreementTerms.Properties == nil {
+			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties field is not available")
+		}
+
+		if signedAgreementTerms.Properties.Accepted == nil {
+			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties Accepted field is not available")
+		}
+
+		if isTermsSignedAndAccepted := *signedAgreementTerms.Properties.Accepted; !isTermsSignedAndAccepted {
+			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms was not signed and accepted")
+		} else {
+			log.Println("Accepted the Azure VM image agreement terms!")
+		}
+	}
 }
 
 func checkRequiredEnvVars(requiredEnvVars []string) []error {
