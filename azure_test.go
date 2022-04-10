@@ -150,7 +150,7 @@ func acceptImageLicense(subscriptionID string, cred *azidentity.ClientSecretCred
 }
 
 func runManagementClusterDryRun(managementClusterName string) {
-	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
+	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(managementClusterName))
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -175,7 +175,7 @@ func runManagementClusterDryRun(managementClusterName string) {
 }
 
 func runManagementCluster(managementClusterName string) {
-	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
+	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(managementClusterName))
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -199,7 +199,7 @@ func runManagementCluster(managementClusterName string) {
 }
 
 func deleteManagementCluster(managementClusterName string) {
-	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
+	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(managementClusterName))
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -223,7 +223,7 @@ func deleteManagementCluster(managementClusterName string) {
 }
 
 func runWorkloadClusterDryRun(workloadClusterName string) {
-	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
+	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(workloadClusterName))
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -248,7 +248,7 @@ func runWorkloadClusterDryRun(workloadClusterName string) {
 }
 
 func runWorkloadCluster(workloadClusterName string) {
-	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
+	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(workloadClusterName))
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -272,7 +272,7 @@ func runWorkloadCluster(workloadClusterName string) {
 }
 
 func deleteWorkloadCluster(workloadClusterName string) {
-	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
+	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(workloadClusterName))
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -327,8 +327,6 @@ func waitForWorkloadClusterDeletion(workloadClusterName string) {
 }
 
 func listWorkloadClusters() WorkloadClusters {
-	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
-
 	var workloadClusters WorkloadClusters
 
 	var clusterListOutput bytes.Buffer
@@ -343,7 +341,7 @@ func listWorkloadClusters() WorkloadClusters {
 			"-o",
 			"json",
 		},
-		Env: append(os.Environ(), envVars...),
+		Env: os.Environ(),
 		// TODO: Output to log files in the future and if needed, to console also
 		Stdout: multiWriter,
 		Stderr: os.Stderr,
@@ -511,7 +509,7 @@ type TanzuConfig map[string]string
 
 type EnvVars []string
 
-func tanzuAzureConfig() TanzuConfig {
+func tanzuAzureConfig(clusterName string) TanzuConfig {
 	// TODO: Ideas:
 	// We could also represent this config in a test data yaml file,
 	// but config as code is more powerful - we can do more over here
@@ -538,6 +536,7 @@ func tanzuAzureConfig() TanzuConfig {
 	// 14. ENABLE_MHC - true or false. In one issue, someone had to set this to false or else their cluster creation was failing
 	// 15. IDENTITY_MANAGEMENT_TYPE - none or some particular set of identity management types
 	return TanzuConfig{
+		"CLUSTER_NAME":                     clusterName,
 		"INFRASTRUCTURE_PROVIDER":          "azure",
 		"CLUSTER_PLAN":                     "dev",
 		"AZURE_LOCATION":                   "australiacentral",
