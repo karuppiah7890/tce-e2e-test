@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// TODO: Add a suffix name as parameter, to pass "e2e", or "azcl" etc to give context
 func InitLogger() {
 	logDir := createDirectoryIfNotExists()
 	writerSync := getLogWriter(logDir)
@@ -49,7 +51,7 @@ func createDirectoryIfNotExists() string {
 }
 
 func getLogWriter(logDirectory string) zapcore.WriteSyncer {
-	logFilePath := filepath.Join(logDirectory, "e2e.log")
+	logFilePath := filepath.Join(logDirectory, fmt.Sprintf("e2e-%s.log", time.Now().Format("2006-01-02-15-04-05")))
 	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("Error while trying to create log file at '%s': %v", logFilePath, err)
