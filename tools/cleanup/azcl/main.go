@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	log.InitLogger()
 	if len(os.Args) != 2 {
 		log.Fatal("Usage: ./azcl <resource-group-name>")
 	}
