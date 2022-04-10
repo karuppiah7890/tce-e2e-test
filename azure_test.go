@@ -6,31 +6,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"runtime"
 	"testing"
 
+	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/marketplaceordering/armmarketplaceordering"
+	"go.uber.org/zap"
 )
 
-const AzureTenantIDEnvVarName = "AZURE_TENANT_ID"
-const AzureSshPublicKeyBase64EnvVarName = "AZURE_SSH_PUBLIC_KEY_B64"
-const AzureClientIDEnvVarName = "AZURE_CLIENT_ID"
-const AzureClientSecretEnvVarName = "AZURE_CLIENT_SECRET"
-const AzureSubscriptionIDEnvVarName = "AZURE_SUBSCRIPTION_ID"
-
-type AzureTestSecrets struct {
-	TenantID       string
-	SubscriptionID string
-	ClientID       string
-	ClientSecret   string
-	SshPublicKey   string
-}
-
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
+	// TODO: Should we use zap.NewDevelopment() ? https://pkg.go.dev/go.uber.org/zap#NewDevelopment .
+	// Check log levels and stuff. Check Levels here - ${GOMODCACHE}/go.uber.org/zap@v1.21.0/level.go
+	// TODO: Should we handle the error that's being returned as the second value??
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	// check if tanzu is installed
 	checkTanzuCLIInstallation()
 
@@ -46,7 +41,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	checkKubectlCLIInstallation()
 
 	if runtime.GOOS == "windows" || runtime.GOOS == "linux" {
-		log.Println("Warning: This test has been tested only on Mac OS till now. Support for Linux and Windows has not been tested, so it's experimental and not guranteed to work!")
+		sugar.Warn("Warning: This test has been tested only on Mac OS till now. Support for Linux and Windows has not been tested, so it's experimental and not guranteed to work!")
 	}
 
 	// Ensure TCE/TF is installed - check TCE installation or install it if not present. Or do it prior to the test run.
@@ -55,40 +50,14 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// Ensure package plugin is present in case package tests are gonna be executed.
 
-	// Check required env vars to run the E2E test. The required env vars are the env vars which store secrets.
-	// If the required env vars are not present, throw error and give information about how to go about fixing the error - by
-	// getting the secrets from appropriate place with the help of docs, maybe link to appropriate Azure or TCE or TKG docs for this.
-	// Ensure that the secrets are NEVER logged into the console
-	requiredEnvVars := []string{
-		AzureTenantIDEnvVarName,
-		AzureSubscriptionIDEnvVarName,
-		AzureClientIDEnvVarName,
-		AzureClientSecretEnvVarName,
-		AzureSshPublicKeyBase64EnvVarName,
-	}
-	log.Println("Checking required environment variables...")
-	errs := checkRequiredEnvVars(requiredEnvVars)
-
-	if len(errs) != 0 {
-		log.Fatalf("Errors while checking required environment variables: %v\n", errs)
-	}
-
-	log.Println("Extracting Azure test secrets from environment variables...")
-	azureTestSecrets := extractAzureTestSecretsFromEnvVars()
+	azureTestSecrets := azure.ExtractAzureTestSecretsFromEnvVars()
 
 	// Have different log levels - none/minimal, error, info, debug etc, so that we can accordingly use those in the E2E test
 
-	log.Println("Logging into Azure...")
-	// login to azure
-	cred, err :=
-		azidentity.NewClientSecretCredential(azureTestSecrets.TenantID,
-			azureTestSecrets.ClientID, azureTestSecrets.ClientSecret, nil)
-	if err != nil {
-		log.Fatalf("failed to obtain a credential: %v", err)
-	}
+	cred := azure.Login()
 
 	// TODO: make the below function return an error and handle the error to log and exit?
-	acceptImageLicense(azureTestSecrets, cred)
+	acceptImageLicense(azureTestSecrets.SubscriptionID, cred)
 
 	// Create random names for management and workload clusters so that we can use them to name the test clusters we are going to
 	// create. Ensure that these names are not already taken - check the resource group names to double check :) As Resource group name
@@ -119,32 +88,11 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	deleteManagementCluster(managementClusterName)
 }
 
-func checkRequiredEnvVars(requiredEnvVars []string) []error {
-	errors := make([]error, 0, len(requiredEnvVars))
-	for _, envVar := range requiredEnvVars {
-		// TODO: Do we also error out when the env var value is defined but empty??
-		_, isDefined := os.LookupEnv(envVar)
+func acceptImageLicense(subscriptionID string, cred *azidentity.ClientSecretCredential) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
 
-		if !isDefined {
-			errors = append(errors, fmt.Errorf("Environment variable `%s` is required but not defined", envVar))
-		}
-	}
-
-	return errors
-}
-
-func extractAzureTestSecretsFromEnvVars() AzureTestSecrets {
-	return AzureTestSecrets{
-		TenantID:       os.Getenv(AzureTenantIDEnvVarName),
-		SubscriptionID: os.Getenv(AzureSubscriptionIDEnvVarName),
-		ClientID:       os.Getenv(AzureClientIDEnvVarName),
-		ClientSecret:   os.Getenv(AzureClientSecretEnvVarName),
-		SshPublicKey:   os.Getenv(AzureSshPublicKeyBase64EnvVarName),
-	}
-}
-
-// TODO: Let's pass just subscription ID instead of the whole set of AzureTestSecrets? As only subscription ID is used
-func acceptImageLicense(azureTestSecrets AzureTestSecrets, cred *azidentity.ClientSecretCredential) {
 	// We have hardcoded the value of the inputs required for accepting Azure VM image license terms.
 	// TODO: Use management-cluster / workload cluster dry run (--dry-run) to get Azure VM image names / skus, offering, publisher
 	azureVmImagePublisher := "vmware-inc"
@@ -156,9 +104,9 @@ func acceptImageLicense(azureTestSecrets AzureTestSecrets, cred *azidentity.Clie
 	azureVmImageOffer := "tkg-capi"
 
 	ctx := context.Background()
-	client := armmarketplaceordering.NewMarketplaceAgreementsClient(azureTestSecrets.SubscriptionID, cred, nil)
+	client := armmarketplaceordering.NewMarketplaceAgreementsClient(subscriptionID, cred, nil)
 
-	log.Println("Getting marketplace terms for Azure VM image...")
+	sugar.Info("Getting marketplace terms for Azure VM image")
 	res, err := client.Get(ctx,
 		armmarketplaceordering.OfferType(armmarketplaceordering.OfferTypeVirtualmachine),
 		azureVmImagePublisher,
@@ -166,51 +114,55 @@ func acceptImageLicense(azureTestSecrets AzureTestSecrets, cred *azidentity.Clie
 		azureVmImageBillingPlanSku,
 		nil)
 	if err != nil {
-		log.Fatalf("Error while getting marketplace terms for Azure VM image: %+v", err)
+		sugar.Fatalf("Error while getting marketplace terms for Azure VM image: %+v", err)
 	}
 
 	agreementTerms := res.MarketplaceAgreementsClientGetResult.AgreementTerms
 
 	if agreementTerms.Properties == nil {
-		log.Fatalf("Error: Azure VM image agreement terms Properties field is not available")
+		sugar.Fatalf("Error: Azure VM image agreement terms Properties field is not available")
 	}
 
 	if agreementTerms.Properties.Accepted == nil {
-		log.Fatalf("Error: Azure VM image agreement terms Properties Accepted field is not available")
+		sugar.Fatalf("Error: Azure VM image agreement terms Properties Accepted field is not available")
 	}
 
 	if isTermsAccepted := *agreementTerms.Properties.Accepted; isTermsAccepted {
-		log.Println("Azure VM image agreement terms are already accepted")
+		sugar.Info("Azure VM image agreement terms are already accepted")
 	} else {
-		log.Println("Azure VM image agreement terms is not already accepted. Accepting the Azure VM image agreement terms now...")
+		sugar.Info("Azure VM image agreement terms is not already accepted. Accepting the Azure VM image agreement terms now")
 
 		*agreementTerms.Properties.Accepted = true
 		// Note: We sign using a PUT request to change the `accepted` property in the agreement. This is how Azure CLI does it too.
 		// This is because the sign API does not work as of this comment. Reference - https://docs.microsoft.com/en-us/answers/questions/52637/cannot-sign-azure-marketplace-vm-image-licence-thr.html
 		createResponse, err := client.Create(ctx, armmarketplaceordering.OfferTypeVirtualmachine, azureVmImagePublisher, azureVmImageOffer, azureVmImageBillingPlanSku, agreementTerms, nil)
 		if err != nil {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: %+v", err)
+			sugar.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: %+v", err)
 		}
 
 		signedAgreementTerms := createResponse.AgreementTerms
 
 		if signedAgreementTerms.Properties == nil {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties field is not available")
+			sugar.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties field is not available")
 		}
 
 		if signedAgreementTerms.Properties.Accepted == nil {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties Accepted field is not available")
+			sugar.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties Accepted field is not available")
 		}
 
 		if isTermsSignedAndAccepted := *signedAgreementTerms.Properties.Accepted; !isTermsSignedAndAccepted {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms was not signed and accepted")
+			sugar.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms was not signed and accepted")
 		} else {
-			log.Println("Accepted the Azure VM image agreement terms!")
+			sugar.Info("Accepted the Azure VM image agreement terms!")
 		}
 	}
 }
 
 func runManagementClusterDryRun(managementClusterName string) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
@@ -225,14 +177,21 @@ func runManagementClusterDryRun(managementClusterName string) {
 			// "10",
 		},
 		Env: append(os.Environ(), envVars...),
+		// TODO: Output to log files in the future and if needed, to console also
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while running management cluster dry run. Exit code: %v. Error: %v", exitCode, err)
+		sugar.Fatalf("Error occurred while running management cluster dry run. Exit code: %v. Error: %v", exitCode, err)
 	}
 }
 
 func runManagementCluster(managementClusterName string) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
@@ -246,14 +205,21 @@ func runManagementCluster(managementClusterName string) {
 			// "10",
 		},
 		Env: append(os.Environ(), envVars...),
+		// TODO: Output to log files in the future and if needed, to console also
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deploying management cluster. Exit code: %v. Error: %v", exitCode, err)
+		sugar.Fatalf("Error occurred while deploying management cluster. Exit code: %v. Error: %v", exitCode, err)
 	}
 }
 
 func deleteManagementCluster(managementClusterName string) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
@@ -267,14 +233,21 @@ func deleteManagementCluster(managementClusterName string) {
 			// "10",
 		},
 		Env: append(os.Environ(), envVars...),
+		// TODO: Output to log files in the future and if needed, to console also
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deleting management cluster. Exit code: %v. Error: %v", exitCode, err)
+		sugar.Fatalf("Error occurred while deleting management cluster. Exit code: %v. Error: %v", exitCode, err)
 	}
 }
 
 func runWorkloadClusterDryRun(workloadClusterName string) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
@@ -289,14 +262,21 @@ func runWorkloadClusterDryRun(workloadClusterName string) {
 			// "10",
 		},
 		Env: append(os.Environ(), envVars...),
+		// TODO: Output to log files in the future and if needed, to console also
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while running workload cluster dry run. Exit code: %v. Error: %v", exitCode, err)
+		sugar.Fatalf("Error occurred while running workload cluster dry run. Exit code: %v. Error: %v", exitCode, err)
 	}
 }
 
 func runWorkloadCluster(workloadClusterName string) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
@@ -310,14 +290,21 @@ func runWorkloadCluster(workloadClusterName string) {
 			// "10",
 		},
 		Env: append(os.Environ(), envVars...),
+		// TODO: Output to log files in the future and if needed, to console also
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deploying workload cluster. Exit code: %v. Error: %v", exitCode, err)
+		sugar.Fatalf("Error occurred while deploying workload cluster. Exit code: %v. Error: %v", exitCode, err)
 	}
 }
 
 func deleteWorkloadCluster(workloadClusterName string) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
@@ -331,10 +318,13 @@ func deleteWorkloadCluster(workloadClusterName string) {
 			// "10",
 		},
 		Env: append(os.Environ(), envVars...),
+		// TODO: Output to log files in the future and if needed, to console also
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deleting workload cluster. Exit code: %v. Error: %v", exitCode, err)
+		sugar.Fatalf("Error occurred while deleting workload cluster. Exit code: %v. Error: %v", exitCode, err)
 	}
 }
 
@@ -345,6 +335,10 @@ type WorkloadCluster struct {
 type WorkloadClusters []WorkloadCluster
 
 func waitForWorkloadClusterDeletion(workloadClusterName string) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	for i := 0; i < 100; i++ {
 		workloadClusters := listWorkloadClusters()
 
@@ -357,17 +351,22 @@ func waitForWorkloadClusterDeletion(workloadClusterName string) {
 		}
 
 		if isClusterPresent {
-			log.Println("Waiting for workload cluster to get deleted...")
+			sugar.Info("Waiting for workload cluster to get deleted")
 		} else {
-			log.Printf("Workload cluster %s successfully deleted\n", workloadClusterName)
+			sugar.Infof("Workload cluster %s successfully deleted\n", workloadClusterName)
 			return
 		}
 	}
 
-	log.Fatalf("Timed out waiting for workload cluster %s to get deleted", workloadClusterName)
+	// TODO: maybe return error instead of fatal stop?
+	sugar.Fatalf("Timed out waiting for workload cluster %s to get deleted", workloadClusterName)
 }
 
 func listWorkloadClusters() WorkloadClusters {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig())
 
 	var workloadClusters WorkloadClusters
@@ -384,14 +383,15 @@ func listWorkloadClusters() WorkloadClusters {
 			"-o",
 			"json",
 		},
-		Env:    append(os.Environ(), envVars...),
+		Env: append(os.Environ(), envVars...),
+		// TODO: Output to log files in the future and if needed, to console also
 		Stdout: multiWriter,
 		Stderr: os.Stderr,
 	})
 
 	if err != nil {
 		// TODO: return error instead of fatal? So that the caller can retry if they want to or stop execution
-		log.Fatalf("Error occurred while listing workload clusters. Exit code: %v. Error: %v", exitCode, err)
+		sugar.Fatalf("Error occurred while listing workload clusters. Exit code: %v. Error: %v", exitCode, err)
 	}
 
 	// TODO: Parse JSON output from the command.
@@ -407,15 +407,24 @@ func listWorkloadClusters() WorkloadClusters {
 }
 
 func checkTanzuCLIInstallation() {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
+	sugar.Info("Checking tanzu CLI installation")
 	path, err := exec.LookPath("tanzu")
 	if err != nil {
-		log.Fatalf("tanzu CLI is not installed")
+		sugar.Fatalf("tanzu CLI is not installed")
 	}
-	log.Printf("tanzu CLI is available at path: %s\n", path)
+	sugar.Infof("tanzu CLI is available at path: %s\n", path)
 }
 
 func checkTanzuManagementClusterCLIPluginInstallation() {
-	log.Println("Checking tanzu management cluster plugin CLI installation")
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
+	sugar.Info("Checking tanzu management cluster plugin CLI installation")
 
 	// TODO: Check for errors and return error?
 	// TODO: Parse version and show warning if version is newer than what's tested by the devs while writing test
@@ -426,15 +435,22 @@ func checkTanzuManagementClusterCLIPluginInstallation() {
 			"management-cluster",
 			"version",
 		},
+		// TODO: Output to log files in the future and if needed, to console also
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while checking management cluster CLI plugin installation. Exit code: %v. Error: %v", exitCode, err)
+		sugar.Fatalf("Error occurred while checking management cluster CLI plugin installation. Exit code: %v. Error: %v", exitCode, err)
 	}
 }
 
 func checkTanzuWorkloadClusterCLIPluginInstallation() {
-	log.Println("Checking tanzu workload cluster plugin CLI installation")
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
+	sugar.Info("Checking tanzu workload cluster plugin CLI installation")
 
 	// TODO: Check for errors and return error?
 	// TODO: Parse version and show warning if version is newer than what's tested by the devs while writing test
@@ -445,27 +461,42 @@ func checkTanzuWorkloadClusterCLIPluginInstallation() {
 			"cluster",
 			"version",
 		},
+		// TODO: Output to log files in the future and if needed, to console also
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while checking workload cluster CLI plugin installation. Exit code: %v. Error: %v", exitCode, err)
+		sugar.Fatalf("Error occurred while checking workload cluster CLI plugin installation. Exit code: %v. Error: %v", exitCode, err)
 	}
 }
 
 func checkDockerCLIInstallation() {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
+	sugar.Info("Checking docker CLI installation")
+
 	path, err := exec.LookPath("docker")
 	if err != nil {
-		log.Fatalf("docker CLI is not installed")
+		sugar.Fatalf("docker CLI is not installed")
 	}
-	log.Printf("docker CLI is available at path: %s\n", path)
+	sugar.Infof("docker CLI is available at path: %s\n", path)
 }
 
 func checkKubectlCLIInstallation() {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
+	sugar.Info("Checking kubectl CLI installation")
+
 	path, err := exec.LookPath("kubectl")
 	if err != nil {
-		log.Fatalf("kubectl CLI is not installed")
+		sugar.Fatalf("kubectl CLI is not installed")
 	}
-	log.Printf("kubectl CLI is available at path: %s\n", path)
+	sugar.Infof("kubectl CLI is available at path: %s\n", path)
 }
 
 type Cmd struct {
@@ -510,6 +541,10 @@ type Cmd struct {
 
 // TODO: Maybe create a wrapper function called Tanzu() around cliRunner?
 func cliRunner(command Cmd) (int, error) {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	cmd := exec.Command(command.Name, command.Args...)
 	cmd.Stdout = command.Stdout
 	cmd.Stderr = command.Stderr
@@ -524,10 +559,12 @@ func cliRunner(command Cmd) (int, error) {
 	// Tanzu({ env: []string{"key=value", "key2=value2"}, command: "management-cluster version" })
 	// But the above is not exactly readable, hmm
 
+	sugar.Infof("Running the command `%v`", cmd.String())
+
 	err := cmd.Run()
 	if err != nil {
 		// TODO: Handle the error by returning it?
-		log.Printf("Error occurred while running the command `%v`: %v", cmd.String(), err)
+		sugar.Infof("Error occurred while running the command `%v`: %v", cmd.String(), err)
 		return cmd.ProcessState.ExitCode(), err
 	}
 
