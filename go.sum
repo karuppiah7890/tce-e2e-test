@@ -1,5 +1,6 @@
-github.com/Azure/azure-sdk-for-go/sdk/azcore v0.21.0 h1:8wVJL0HUP5yDFXvotdewORTw7Yu88JbreWN/mobSvsQ=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v0.21.0/go.mod h1:fBF9PQNqB8scdgpZ3ufzaLntG0AG7C1WjPMsiFOmfHM=
+github.com/Azure/azure-sdk-for-go/sdk/azcore v0.22.0 h1:zBJcBJwte0x6PcPK7XaWDMvK2o2ZM2f1sMaqNNavQ5g=
+github.com/Azure/azure-sdk-for-go/sdk/azcore v0.22.0/go.mod h1:fBF9PQNqB8scdgpZ3ufzaLntG0AG7C1WjPMsiFOmfHM=
 github.com/Azure/azure-sdk-for-go/sdk/azidentity v0.13.0/go.mod h1:TmXReXZ9yPp5D5TBRMTAtyz+UyOl15Py4hL5E5p6igQ=
 github.com/Azure/azure-sdk-for-go/sdk/azidentity v0.13.2 h1:mM/yraAumqMMIYev6zX0oxHqX6hreUs5wXf76W47r38=
 github.com/Azure/azure-sdk-for-go/sdk/azidentity v0.13.2/go.mod h1:+nVKciyKD2J9TyVcEQ82Bo9b+3F92PiQfHrIE/zqLqM=
@@ -8,6 +9,8 @@ github.com/Azure/azure-sdk-for-go/sdk/internal v0.9.1 h1:sLZ/Y+P/5RRtsXWylBjB5lk
 github.com/Azure/azure-sdk-for-go/sdk/internal v0.9.1/go.mod h1:KLF4gFr6DcKFZwSuH8w8yEK6DpFl3LP5rhdvAb7Yz5I=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/marketplaceordering/armmarketplaceordering v0.2.1 h1:268BUGKxZNrsgjgBzEkyofmKcHNdrFiYxSDafEqZkAg=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/marketplaceordering/armmarketplaceordering v0.2.1/go.mod h1:MDi67IjcJFOzUc4EFdbR+1K2bSoY/c/ZWb9pIQ8VFLg=
+github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v0.3.1 h1:EXTDtCSTfPauGawsG+Ae/W46B1PkrgzuKNrcFqy4ljM=
+github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v0.3.1/go.mod h1:PoA99xQAlN13MyUjzgIPWMZEr0etHpYSuT25LmhR3zQ=
 github.com/AzureAD/microsoft-authentication-library-for-go v0.4.0 h1:WVsrXCnHlDDX8ls+tootqRE87/hL9S/g4ewig9RsD/c=
 github.com/AzureAD/microsoft-authentication-library-for-go v0.4.0/go.mod h1:Vt9sXTKwMyGcOxSmLDMnGPgqsUg7m8pe215qMLrDXw4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

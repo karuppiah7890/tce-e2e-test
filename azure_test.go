@@ -143,6 +143,7 @@ func extractAzureTestSecretsFromEnvVars() AzureTestSecrets {
 	}
 }
 
+// TODO: Let's pass just subscription ID instead of the whole set of AzureTestSecrets? As only subscription ID is used
 func acceptImageLicense(azureTestSecrets AzureTestSecrets, cred *azidentity.ClientSecretCredential) {
 	// We have hardcoded the value of the inputs required for accepting Azure VM image license terms.
 	// TODO: Use management-cluster / workload cluster dry run (--dry-run) to get Azure VM image names / skus, offering, publisher
