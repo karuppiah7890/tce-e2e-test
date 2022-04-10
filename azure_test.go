@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
@@ -59,8 +60,9 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// is based on the cluster name
 	// TODO: Create random names later, using random number or using short or long UUIDs.
 	// TODO: Do we allow users to pass the cluster name for both clusters? We could. How do we take inputs? File? Env vars? Flags?
-	managementClusterName := "test-mgmt"
-	workloadClusterName := "test-wkld"
+	clusterNameSuffix := time.Now().Unix()
+	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
+	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
 
 	runManagementClusterDryRun(managementClusterName)
 
