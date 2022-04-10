@@ -3,7 +3,7 @@ package azure
 import (
 	"os"
 
-	"go.uber.org/zap"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 )
 
 const TenantIDEnvVarName = "AZURE_TENANT_ID"
@@ -21,13 +21,9 @@ type TestSecrets struct {
 }
 
 func ExtractAzureTestSecretsFromEnvVars() TestSecrets {
-	logger, _ := zap.NewProduction()
-	defer logger.Sync() // flushes buffer, if any
-	sugar := logger.Sugar()
-
 	CheckRequiredAzureEnvVars()
 
-	sugar.Info("Extracting Azure test secrets from environment variables")
+	log.Info("Extracting Azure test secrets from environment variables")
 
 	return TestSecrets{
 		TenantID:       os.Getenv(TenantIDEnvVarName),

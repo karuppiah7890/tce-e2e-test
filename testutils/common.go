@@ -4,15 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"go.uber.org/zap"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 )
 
 func CheckRequiredEnvVars(requiredEnvVars []string) []error {
-	logger, _ := zap.NewProduction()
-	defer logger.Sync() // flushes buffer, if any
-	sugar := logger.Sugar()
-
-	sugar.Info("Checking required environment variables")
+	log.Info("Checking required environment variables")
 
 	errors := make([]error, 0, len(requiredEnvVars))
 	for _, envVar := range requiredEnvVars {
