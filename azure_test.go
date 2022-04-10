@@ -19,7 +19,7 @@ import (
 )
 
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
-	log.InitLogger()
+	log.InitLogger("azure-mgmt-wkld-e2e")
 
 	// check if tanzu is installed
 	checkTanzuCLIInstallation()
