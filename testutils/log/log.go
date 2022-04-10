@@ -6,12 +6,16 @@ func Fatalf(template string, args ...interface{}) {
 	zap.S().Fatalf(template, args...)
 }
 
+func Fatal(args ...interface{}) {
+	zap.S().Fatal(args...)
+}
+
 func Infof(template string, args ...interface{}) {
 	zap.S().Infof(template, args...)
 }
 
 func Info(args ...interface{}) {
-	zap.S().Warn(args...)
+	zap.S().Info(args...)
 }
 
 func Warnf(template string, args ...interface{}) {
@@ -20,8 +24,4 @@ func Warnf(template string, args ...interface{}) {
 
 func Warn(args ...interface{}) {
 	zap.S().Warn(args...)
-}
-
-func Fatal(args ...interface{}) {
-	zap.S().Fatal(args...)
 }
