@@ -23,5 +23,5 @@ source .env.azure.prod
 # To clean up any golang test result cache data
 go clean -testcache
 
-go test -v ./... -timeout 1h
+go test -v ./... -timeout 2h
 ```
