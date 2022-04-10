@@ -312,6 +312,7 @@ func deleteWorkloadCluster(workloadClusterName string) {
 			"cluster",
 			"delete",
 			workloadClusterName,
+			"--yes",
 			// TODO: Should we add verbosity flag and value by default? or
 			// let the user define the verbosity when running the tests maybe?
 			// "-v",
