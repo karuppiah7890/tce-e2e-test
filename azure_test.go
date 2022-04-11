@@ -22,6 +22,12 @@ import (
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("azure-mgmt-wkld-e2e")
 
+	// TODO: Think about installing TCE / TF from tar ball and from source
+	// make release based on OS? Windows has make? Hmm
+	// release-dir
+	// tar ball, zip based on OS
+	// install.sh and install.bat based on OS
+
 	// check if tanzu is installed
 	checkTanzuCLIInstallation()
 
