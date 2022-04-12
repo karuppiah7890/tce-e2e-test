@@ -23,7 +23,7 @@ func main() {
 	}
 	flag.Parse()
 
-	kclient, err := kubeclient.GetKubeClient(*kubeconfig, "kind-kind")
+	kclient, err := kubeclient.GetKubeClient(*kubeconfig, "")
 	if err != nil {
 		log.Fatalf("error getting kubernetes client: %v", err)
 	}

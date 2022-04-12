@@ -15,6 +15,7 @@ type KubeClient struct {
 }
 
 // GetKubeClient creates a Kubernetes client for a given kubeconfig path and kubeconfig context in the kubeconfig.
+// When context is empty, the current context mentioned in the kubeconfig is used by the kube client
 func GetKubeClient(kubeConfigPath string, context string) (*KubeClient, error) {
 	config, err := configForContext(kubeConfigPath, context)
 	if err != nil {
@@ -42,6 +43,7 @@ func configForContext(kubeConfigPath string, context string) (*rest.Config, erro
 func getConfig(kubeConfigPath string, context string) clientcmd.ClientConfig {
 	rules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfigPath}
 
+	// TODO: Should we get rid of the cluster defaults? Maybe we don't need it
 	overrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmd.ClusterDefaults}
 
 	if context != "" {
