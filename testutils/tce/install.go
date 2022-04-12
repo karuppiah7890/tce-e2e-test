@@ -18,6 +18,13 @@ import (
 // Example: getTceArtifactUrl("0.11.0")
 func getTceArtifactUrl(version string) (string, error) {
 	log.Infof("Getting TCE artifact URL for version %s", version)
+
+	// TODO: Maybe merge supported OSes and architectures list in the form of linux/amd64 , darwin/amd64 etc,
+	// since it's possible that some architectures are supported only in some OSes, for example linux/arm64 might
+	// be supported in the future but maybe darwin/arm64 is not supported, in which case having a separate list for
+	// architecture and OS doesn't make sense and makes things harder. It's better to have a list similar to what
+	// `go tool dist list` provides and use it to check support :)
+
 	// TODO: Convert magic strings like "amd64" to constants
 	supportedArchitectures := []string{"amd64"}
 	// TODO: Convert magic strings like "linux", "darwin", "windows" to constants
@@ -103,7 +110,7 @@ func Install(version string) error {
 	tceDir := dirEntries[0]
 
 	operatingSystem := runtime.GOOS
-	installScriptExtensions := map[string]string{"linux": "sh", "darwin": "sh", "windows": ".bat"}
+	installScriptExtensions := map[string]string{"linux": "sh", "darwin": "sh", "windows": "bat"}
 	// TODO: Maybe merge the supported OSes and script extension data as script extension should be
 	// present for each supported operating system in this case and currently there's a duplication of
 	// data here
