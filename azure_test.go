@@ -230,10 +230,9 @@ func runManagementClusterDryRun(managementClusterName string) {
 			// "-v",
 			// "10",
 		},
-		Env: append(os.Environ(), envVars...),
-		// TODO: Output to log files in the future and if needed, to console also
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Env:    append(os.Environ(), envVars...),
+		Stdout: log.StdOutLogBridge,
+		Stderr: log.StdErrLogBridge,
 	})
 
 	if err != nil {
@@ -254,10 +253,9 @@ func runManagementCluster(managementClusterName string) {
 			// "-v",
 			// "10",
 		},
-		Env: append(os.Environ(), envVars...),
-		// TODO: Output to log files in the future and if needed, to console also
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Env:    append(os.Environ(), envVars...),
+		Stdout: log.StdOutLogBridge,
+		Stderr: log.StdErrLogBridge,
 	})
 
 	if err != nil {
@@ -279,10 +277,9 @@ func deleteManagementCluster(managementClusterName string) {
 			// "-v",
 			// "10",
 		},
-		Env: append(os.Environ(), envVars...),
-		// TODO: Output to log files in the future and if needed, to console also
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Env:    append(os.Environ(), envVars...),
+		Stdout: log.StdOutLogBridge,
+		Stderr: log.StdErrLogBridge,
 	})
 
 	if err != nil {
@@ -304,10 +301,9 @@ func runWorkloadClusterDryRun(workloadClusterName string) {
 			// "-v",
 			// "10",
 		},
-		Env: append(os.Environ(), envVars...),
-		// TODO: Output to log files in the future and if needed, to console also
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Env:    append(os.Environ(), envVars...),
+		Stdout: log.StdOutLogBridge,
+		Stderr: log.StdErrLogBridge,
 	})
 
 	if err != nil {
@@ -328,10 +324,9 @@ func runWorkloadCluster(workloadClusterName string) {
 			// "-v",
 			// "10",
 		},
-		Env: append(os.Environ(), envVars...),
-		// TODO: Output to log files in the future and if needed, to console also
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Env:    append(os.Environ(), envVars...),
+		Stdout: log.StdOutLogBridge,
+		Stderr: log.StdErrLogBridge,
 	})
 
 	if err != nil {
@@ -353,10 +348,9 @@ func deleteWorkloadCluster(workloadClusterName string) {
 			// "-v",
 			// "10",
 		},
-		Env: append(os.Environ(), envVars...),
-		// TODO: Output to log files in the future and if needed, to console also
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Env:    append(os.Environ(), envVars...),
+		Stdout: log.StdOutLogBridge,
+		Stderr: log.StdErrLogBridge,
 	})
 
 	if err != nil {
@@ -413,10 +407,9 @@ func listWorkloadClusters() WorkloadClusters {
 			"-o",
 			"json",
 		},
-		Env: os.Environ(),
-		// TODO: Output to log files in the future and if needed, to console also
+		Env:    os.Environ(),
 		Stdout: multiWriter,
-		Stderr: os.Stderr,
+		Stderr: log.StdErrLogBridge,
 	})
 
 	if err != nil {
@@ -457,9 +450,8 @@ func checkTanzuManagementClusterCLIPluginInstallation() {
 			"management-cluster",
 			"version",
 		},
-		// TODO: Output to log files in the future and if needed, to console also
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Stdout: log.StdOutLogBridge,
+		Stderr: log.StdErrLogBridge,
 	})
 
 	if err != nil {
@@ -479,9 +471,8 @@ func checkTanzuWorkloadClusterCLIPluginInstallation() {
 			"cluster",
 			"version",
 		},
-		// TODO: Output to log files in the future and if needed, to console also
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Stdout: log.StdOutLogBridge,
+		Stderr: log.StdErrLogBridge,
 	})
 
 	if err != nil {

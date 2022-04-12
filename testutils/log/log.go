@@ -33,3 +33,23 @@ func DPanicf(template string, args ...interface{}) {
 func Errorf(template string, args ...interface{}) {
 	zap.S().Errorf(template, args...)
 }
+
+// stdOutLogBridge implements the io.Writer interface
+type stdOutLogBridge struct{}
+
+func (s stdOutLogBridge) Write(p []byte) (n int, err error) {
+	zap.S().Info(string(p))
+	return len(p), nil
+}
+
+var StdOutLogBridge = stdOutLogBridge{}
+
+// stdErrLogBridge implements the io.Writer interface
+type stdErrLogBridge struct{}
+
+func (s stdErrLogBridge) Write(p []byte) (n int, err error) {
+	zap.S().Error(string(p))
+	return len(p), nil
+}
+
+var StdErrLogBridge = stdErrLogBridge{}
