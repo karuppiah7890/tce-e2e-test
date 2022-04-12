@@ -397,7 +397,7 @@ func listWorkloadClusters() WorkloadClusters {
 
 	var clusterListOutput bytes.Buffer
 
-	multiWriter := io.MultiWriter(&clusterListOutput, os.Stdout)
+	multiWriter := io.MultiWriter(&clusterListOutput, log.StdOutLogBridge)
 
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
