@@ -25,3 +25,7 @@ func Warnf(template string, args ...interface{}) {
 func Warn(args ...interface{}) {
 	zap.S().Warn(args...)
 }
+
+func DPanicf(template string, args ...interface{}) {
+	zap.S().DPanicf(template, args...)
+}

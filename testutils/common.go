@@ -7,6 +7,8 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 )
 
+// TODO: Rename this file / refactor and move this method to an appropriate place
+
 func CheckRequiredEnvVars(requiredEnvVars []string) []error {
 	log.Info("Checking required environment variables")
 
