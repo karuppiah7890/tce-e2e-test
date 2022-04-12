@@ -72,6 +72,13 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
 	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
 
+	// TODO: Idea - if workload cluster and management cluster name are tied to a pipeline / workflow using
+	// a unique ID, then we can use an external process to check clusters that are lying around and
+	// check corresponding pipelines / workflows and if they are finished / done / cancelled, then we can
+	// cleanup the cluster. We can also look at how we can add some sort of metadata (like labels, tags) to
+	// the cluster or cluster resources using Tanzu to be able to do this instead of encoding the pipeline
+	// metadata in the cluster name but that's a good idea too :)
+
 	runManagementClusterDryRun(managementClusterName)
 
 	// TODO: Handle errors during deployment
