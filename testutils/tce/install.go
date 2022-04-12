@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/karuppiah7890/tce-e2e-test/testutils/download"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/extract"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 )
@@ -72,10 +73,10 @@ func Install(version string) error {
 
 	// TODO: Maybe change this naming? The package (download) or function name (DownloadFileFromUrl).
 	// It reads weird when it says download twice
-	// err = download.DownloadFileFromUrl(artifactUrl, artifactName)
-	// if err != nil {
-	// 	return fmt.Errorf("error downloading TCE artifact: %v", err)
-	// }
+	err = download.DownloadFileFromUrl(artifactUrl, artifactName)
+	if err != nil {
+		return fmt.Errorf("error downloading TCE artifact: %v", err)
+	}
 
 	targetDirectory := filepath.Join(os.TempDir(), fmt.Sprintf("tce-install-%d", time.Now().Unix()))
 	// extract tar ball or zip based on previous step
