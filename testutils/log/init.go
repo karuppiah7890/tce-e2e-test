@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -55,7 +56,9 @@ func getLogWriter(logDirectory string, loggingProgram string) zapcore.WriteSynce
 	if err != nil {
 		log.Fatalf("Error while trying to create log file at '%s': %v", logFilePath, err)
 	}
-	return zapcore.AddSync(logFile)
+	// This way we log to standard output and to the log file, kind of like tee command in Linux :D
+	stdOutAndLogFile := io.MultiWriter(os.Stdout, logFile)
+	return zapcore.AddSync(stdOutAndLogFile)
 }
 
 func getEncoder() zapcore.Encoder {
