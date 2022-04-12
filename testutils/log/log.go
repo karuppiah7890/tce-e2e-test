@@ -29,3 +29,7 @@ func Warn(args ...interface{}) {
 func DPanicf(template string, args ...interface{}) {
 	zap.S().DPanicf(template, args...)
 }
+
+func Errorf(template string, args ...interface{}) {
+	zap.S().Errorf(template, args...)
+}

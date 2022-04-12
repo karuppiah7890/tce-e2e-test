@@ -8,12 +8,15 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/marketplaceordering/armmarketplaceordering"
@@ -75,10 +78,33 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: Handle errors during deployment
 	runManagementCluster(managementClusterName)
 
+	kubeConfigPath, err := getKubeConfigPath()
+	if err != nil {
+		// Should we panic here and stop?
+		log.Errorf("error while getting kubeconfig path: %v", err)
+	}
+	managementClusterKubeContext := getKubeContextForTanzuCluster(managementClusterName)
+
+	log.Infof("Management Cluster %s Information: ", managementClusterName)
+	err = printClusterInformation(kubeConfigPath, managementClusterKubeContext)
+	if err != nil {
+		// Should we panic here and stop?
+		log.Errorf("error while printing management cluster information: %v", err)
+	}
+
 	runWorkloadClusterDryRun(workloadClusterName)
 
 	// TODO: Handle errors during deployment
 	runWorkloadCluster(workloadClusterName)
+
+	workloadClusterKubeContext := getKubeContextForTanzuCluster(workloadClusterName)
+
+	log.Infof("Workload Cluster %s Information: ", workloadClusterName)
+	err = printClusterInformation(kubeConfigPath, workloadClusterKubeContext)
+	if err != nil {
+		// Should we panic here and stop?
+		log.Errorf("error while printing workload cluster information: %v", err)
+	}
 
 	// TODO: Handle errors during cluster deletion
 	deleteWorkloadCluster(workloadClusterName)
@@ -89,6 +115,20 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	deleteManagementCluster(managementClusterName)
+}
+
+func getKubeConfigPath() (string, error) {
+	home := homedir.HomeDir()
+
+	if home == "" {
+		return "", fmt.Errorf("could not find home directory to get absolute path of kubeconfig")
+	}
+
+	return filepath.Join(home, ".kube", "config"), nil
+}
+
+func getKubeContextForTanzuCluster(clusterName string) string {
+	return fmt.Sprintf("%s-admin@%s", clusterName, clusterName)
 }
 
 func acceptImageLicense(subscriptionID string, cred *azidentity.ClientSecretCredential) {
@@ -587,4 +627,47 @@ func tanzuConfigToEnvVars(tanzuConfig TanzuConfig) EnvVars {
 	}
 
 	return envVars
+}
+
+// TODO: Should this return cluster information or just print / log them?
+func printClusterInformation(kubeConfigPath string, kubeContext string) error {
+	client, err := kubeclient.GetKubeClient(kubeConfigPath, kubeContext)
+	if err != nil {
+		return fmt.Errorf("error getting kube client: %v", err)
+	}
+
+	versionInfo, err := client.Discovery().ServerVersion()
+	if err != nil {
+		return fmt.Errorf("error getting kubernetes api server version: %v", err)
+	}
+
+	log.Infof("Kubernetes API server version is %s", versionInfo.String())
+
+	// TODO: Should we get exact details as `kubectl get pod -A`? Showing age, restart count, how many containers are ready,
+	// pod's phase (running) etc
+
+	pods, err := client.GetAllPodsFromAllNamespaces()
+	if err != nil {
+		return fmt.Errorf("error getting all pods from all namespaces: %v", err)
+	}
+
+	// TODO: Should we check pods.RemainingItemCount value to see if it is 0 to ensure we have got all the pods?
+
+	log.Info("Pod Name\tPod Namespace\tPod Phase")
+	for _, pod := range pods.Items {
+		// TODO: Use some library to print / format in some sort of table format? With proper spacing
+		log.Infof("%s\t%s\t%s", pod.Name, pod.Namespace, pod.Status.Phase)
+	}
+
+	nodes, err := client.GetAllNodes()
+	if err != nil {
+		return fmt.Errorf("error getting all nodes: %v", err)
+	}
+
+	log.Info("\n\nNode Name\tNode Phase")
+	for _, node := range nodes.Items {
+		log.Infof("%s\t%s", node.Name, node.Status.Phase)
+	}
+
+	return nil
 }
