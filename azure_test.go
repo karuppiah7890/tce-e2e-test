@@ -85,6 +85,12 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// and cleanup management cluster
 	runManagementCluster(managementClusterName)
 
+	// TODO: check if management cluster is running by doing something similar to
+	// `tanzu management-cluster get | grep "${MANAGEMENT_CLUSTER_NAME}" | grep running`
+
+	// TODO: get management cluster kubeconfig by running
+	// `tanzu management-cluster kubeconfig get ${MANAGEMENT_CLUSTER_NAME} --admin`
+
 	kubeConfigPath, err := getKubeConfigPath()
 	if err != nil {
 		// Should we panic here and stop?
@@ -104,6 +110,14 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster and then cleanup workload cluster
 	runWorkloadCluster(workloadClusterName)
+
+	// TODO: check if workload cluster is running by doing something similar to
+	// `tanzu cluster list | grep "${WORKLOAD_CLUSTER_NAME}" | grep running`
+	// or better, use -o json, we have a function for that and use that data :D
+	// listWorkloadClusters is the function. Check if the workload cluster is running
+
+	// TODO: get workload cluster kubeconfig by running the command
+	// `tanzu cluster kubeconfig get ${WORKLOAD_CLUSTER_NAME} --admin`
 
 	workloadClusterKubeContext := getKubeContextForTanzuCluster(workloadClusterName)
 
@@ -359,7 +373,8 @@ func deleteWorkloadCluster(workloadClusterName string) {
 }
 
 type WorkloadCluster struct {
-	Name string `json:"name"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
 }
 
 type WorkloadClusters []WorkloadCluster
