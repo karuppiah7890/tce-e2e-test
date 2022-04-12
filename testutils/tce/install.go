@@ -3,12 +3,12 @@ package tce
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
-	"github.com/karuppiah7890/tce-e2e-test/testutils/download"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/extract"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 )
@@ -72,16 +72,52 @@ func Install(version string) error {
 
 	// TODO: Maybe change this naming? The package (download) or function name (DownloadFileFromUrl).
 	// It reads weird when it says download twice
-	err = download.DownloadFileFromUrl(artifactUrl, artifactName)
-	if err != nil {
-		return fmt.Errorf("error downloading TCE artifact: %v", err)
-	}
+	// err = download.DownloadFileFromUrl(artifactUrl, artifactName)
+	// if err != nil {
+	// 	return fmt.Errorf("error downloading TCE artifact: %v", err)
+	// }
 
 	targetDirectory := filepath.Join(os.TempDir(), fmt.Sprintf("tce-install-%d", time.Now().Unix()))
 	// extract tar ball or zip based on previous step
 	extract.Extract(artifactName, targetDirectory)
 
 	// invoke install.sh or install.bat based on previous step
+	dirEntries, err := os.ReadDir(targetDirectory)
+
+	if err != nil {
+		return fmt.Errorf("error reading target directory %s containing extracted files: %v", targetDirectory, err)
+	}
+
+	if len(dirEntries) != 1 {
+		return fmt.Errorf("expected target directory %s to contain only 1 directory but it contains %d directories", targetDirectory, len(dirEntries))
+	}
+
+	tceDir := dirEntries[0]
+
+	operatingSystem := runtime.GOOS
+	installScriptExtensions := map[string]string{"linux": "sh", "darwin": "sh", "windows": ".bat"}
+	// TODO: Maybe merge the supported OSes and script extension data as script extension should be
+	// present for each supported operating system in this case and currently there's a duplication of
+	// data here
+
+	installScriptExtension := installScriptExtensions[operatingSystem]
+
+	installScript := filepath.Join(targetDirectory, tceDir.Name(), fmt.Sprintf("install.%s", installScriptExtension))
+
+	cmd := exec.Command(installScript)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if operatingSystem == "linux" || operatingSystem == "darwin" {
+		cmd.Env = append(os.Environ(), "ALLOW_INSTALL_AS_ROOT=true")
+	}
+
+	log.Infof("Running the command `%v`", cmd.String())
+
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("error occurred while running the command `%v`: %v. Exit code: %d", cmd.String(), err, cmd.ProcessState.ExitCode())
+	}
 
 	return nil
 }
