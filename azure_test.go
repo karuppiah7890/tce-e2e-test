@@ -30,10 +30,13 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// release-dir
 	// tar ball, zip based on OS
 	// install.sh and install.bat based on OS
+	// TODO: use tce.Install("<version>")?
 
+	// Ensure TCE/TF is installed - check TCE installation or install it if not present. Or do it prior to the test run.
 	// check if tanzu is installed
 	checkTanzuCLIInstallation()
 
+	// Ensure management and workload cluster plugins are present.
 	// check if management cluster plugin is present
 	checkTanzuManagementClusterCLIPluginInstallation()
 
@@ -49,11 +52,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Warn("Warning: This test has been tested only on Mac OS till now. Support for Linux and Windows has not been tested, so it's experimental and not guranteed to work!")
 	}
 
-	// Ensure TCE/TF is installed - check TCE installation or install it if not present. Or do it prior to the test run.
-
-	// Ensure management and workload cluster plugins are present.
-
-	// Ensure package plugin is present in case package tests are gonna be executed.
+	// TODO: Ensure package plugin is present in case package tests are gonna be executed.
 
 	azureTestSecrets := azure.ExtractAzureTestSecretsFromEnvVars()
 
@@ -76,6 +75,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	runManagementClusterDryRun(managementClusterName)
 
 	// TODO: Handle errors during deployment
+	// and cleanup management cluster
 	runManagementCluster(managementClusterName)
 
 	kubeConfigPath, err := getKubeConfigPath()
@@ -95,6 +95,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	runWorkloadClusterDryRun(workloadClusterName)
 
 	// TODO: Handle errors during deployment
+	// and cleanup management cluster and then cleanup workload cluster
 	runWorkloadCluster(workloadClusterName)
 
 	workloadClusterKubeContext := getKubeContextForTanzuCluster(workloadClusterName)
@@ -106,14 +107,25 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Errorf("error while printing workload cluster information: %v", err)
 	}
 
+	// TODO: Consider testing one basic package or we can do this separately or have
+	// a feature flag to test it when needed and skip it when not needed.
+	// This will give us an idea of how testing packages looks like and give an example
+	// to TCE package owners
+
 	// TODO: Handle errors during cluster deletion
+	// and cleanup management cluster and then cleanup workload cluster
 	deleteWorkloadCluster(workloadClusterName)
 
 	// TODO: Handle errors during waiting for cluster deletion.
-	// We could retry in some cases, to just list the workload clusters
+	// We could retry in some cases, to just list the workload clusters.
+	// If all retries fail, cleanup management cluster and then cleanup workload cluster
 	waitForWorkloadClusterDeletion(workloadClusterName)
 
+	// TODO: Cleanup workload cluster kube config data (cluster, user, context)
+	// since tanzu cluster delete does not delete workload cluster kubeconfig entry
+
 	// TODO: Handle errors during cluster deletion
+	// and cleanup management cluster
 	deleteManagementCluster(managementClusterName)
 }
 
