@@ -485,6 +485,21 @@ type Cmd struct {
 	Stderr io.Writer
 }
 
+// TODO: Consider using Tanzu golang client library instead of running tanzu as a CLI.
+// We could invoke plugins using their names and have tight integration. It comes with it's
+// own pros and cons. Pro - tight and smooth integration with Tanzu Framework.
+// Con - same as Pro - tight and smooth integration with Tanzu Framework - why? because Tanzu
+// Framework does not provide any guarantee for API support, also it's in 0.x.y series which
+// means they can break a lot of things which can break already generally fragile E2E tests
+// more easily and more often. Also, if we import Tanzu Framework as a library, to test different
+// versions of Tanzu Framework, we have import different versions of it, unlike CLI where we can
+// just install the appropriate CLI version before testing it. For example, test v0.11.4 TF that
+// TCE currently uses and also test v0.20.0 TF which is the latest version of TF. Of course it's not
+// easy to concurrently / simultaneously test both versions, at least not in CLI, and with library, idk,
+// it might be possible and easy? not sure for now, gotta experiment. We can also consider dynamically linked
+// libraries and similar concept, we currently instead have tanzu CLI tool which is dynamically invoked and linked
+// to this test program
+
 // TODO: Maybe create a wrapper function called Tanzu() around cliRunner?
 func cliRunner(command Cmd) (int, error) {
 	cmd := exec.Command(command.Name, command.Args...)
