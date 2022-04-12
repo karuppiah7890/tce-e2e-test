@@ -71,6 +71,13 @@ func Install(version string) error {
 	// so it will get downloaded to the current working directory of the program
 	artifactName := tokens[len(tokens)-1]
 
+	// TODO: Maybe avoid downloading again if there is a file already present locally with same checksum?
+	// We could use data like etag header etc. This could act like a cache for us :) To avoid redownloading :D
+
+	// TODO: Maybe do an integrity check for downloaded artifact with the tce-checksums.txt file which has to be downloaded separately -
+	// but we don't have to download it into a file, just pulling it / downloading it into the program memory and getting
+	// the checksum works too!
+
 	// TODO: Maybe change this naming? The package (download) or function name (DownloadFileFromUrl).
 	// It reads weird when it says download twice
 	err = download.DownloadFileFromUrl(artifactUrl, artifactName)
