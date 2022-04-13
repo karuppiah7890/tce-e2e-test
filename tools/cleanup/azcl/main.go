@@ -10,6 +10,12 @@ import (
 
 func main() {
 	log.InitLogger("azcl")
+
+	// TODO: Support providing multiple resource group names to delete.
+	// TODO: Support running delete on multiple resource group names concurrently / parallely vs sequentially based on the order of
+	// occurrence in the list in the CLI command.
+	// Use urfave/cli for handling variadic arguments? or use plain golang std library as usual?
+
 	if len(os.Args) != 2 {
 		log.Fatal("Usage: ./azcl <resource-group-name>")
 	}
