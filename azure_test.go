@@ -250,6 +250,12 @@ func runManagementClusterDryRun(managementClusterName string) {
 		// in logs, also, even if we mask secrets, is this data useful and necessary?
 		// The data in log can help development but that's all
 		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		// TODO: Do we really want to output to log.ErrorWriter ? Is this
 		// data necessary in the logs? This data will contain secrets but for now we haven't masked secrets
 		// in logs, also, even if we mask secrets, is this data useful and necessary?
@@ -278,6 +284,12 @@ func runManagementCluster(managementClusterName string) {
 		},
 		Env:    append(os.Environ(), envVars...),
 		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		Stderr: log.ErrorWriter,
 	})
 
@@ -304,6 +316,12 @@ func getManagementClusterKubeConfig(managementClusterName string) {
 		},
 		Env:    append(os.Environ(), envVars...),
 		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		Stderr: log.ErrorWriter,
 	})
 
@@ -328,6 +346,12 @@ func deleteManagementCluster(managementClusterName string) {
 		},
 		Env:    append(os.Environ(), envVars...),
 		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		Stderr: log.ErrorWriter,
 	})
 
@@ -356,6 +380,12 @@ func runWorkloadClusterDryRun(workloadClusterName string) {
 		// in logs, also, even if we mask secrets, is this data useful and necessary?
 		// The data in log can help development but that's all
 		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		// TODO: Do we really want to output to log.ErrorWriter ? Is this
 		// data necessary in the logs? This data will contain secrets but for now we haven't masked secrets
 		// in logs, also, even if we mask secrets, is this data useful and necessary?
@@ -384,6 +414,12 @@ func runWorkloadCluster(workloadClusterName string) {
 		},
 		Env:    append(os.Environ(), envVars...),
 		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		Stderr: log.ErrorWriter,
 	})
 
@@ -438,6 +474,12 @@ func getWorkloadClusterKubeConfig(workloadClusterName string) {
 		},
 		Env:    append(os.Environ(), envVars...),
 		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		Stderr: log.ErrorWriter,
 	})
 
@@ -462,6 +504,12 @@ func deleteWorkloadCluster(workloadClusterName string) {
 		},
 		Env:    append(os.Environ(), envVars...),
 		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		Stderr: log.ErrorWriter,
 	})
 
@@ -525,6 +573,12 @@ func listWorkloadClusters() WorkloadClusters {
 		},
 		Env:    os.Environ(),
 		Stdout: multiWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		// TODO: Do we really want to output to log.ErrorWriter ? Is this
 		// data necessary in the logs? This function will be called
 		// a lot of times. The data in log can help development and also
@@ -571,6 +625,12 @@ func checkTanzuManagementClusterCLIPluginInstallation() {
 			"version",
 		},
 		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		Stderr: log.ErrorWriter,
 	})
 
@@ -592,6 +652,12 @@ func checkTanzuWorkloadClusterCLIPluginInstallation() {
 			"version",
 		},
 		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
 		Stderr: log.ErrorWriter,
 	})
 
