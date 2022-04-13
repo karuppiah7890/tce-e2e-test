@@ -245,8 +245,8 @@ func runManagementClusterDryRun(managementClusterName string) {
 			// "10",
 		},
 		Env:    append(os.Environ(), envVars...),
-		Stdout: log.StdOutLogBridge,
-		Stderr: log.StdErrLogBridge,
+		Stdout: log.InfoWriter,
+		Stderr: log.ErrorWriter,
 	})
 
 	if err != nil {
@@ -268,8 +268,8 @@ func runManagementCluster(managementClusterName string) {
 			// "10",
 		},
 		Env:    append(os.Environ(), envVars...),
-		Stdout: log.StdOutLogBridge,
-		Stderr: log.StdErrLogBridge,
+		Stdout: log.InfoWriter,
+		Stderr: log.ErrorWriter,
 	})
 
 	if err != nil {
@@ -292,8 +292,8 @@ func deleteManagementCluster(managementClusterName string) {
 			// "10",
 		},
 		Env:    append(os.Environ(), envVars...),
-		Stdout: log.StdOutLogBridge,
-		Stderr: log.StdErrLogBridge,
+		Stdout: log.InfoWriter,
+		Stderr: log.ErrorWriter,
 	})
 
 	if err != nil {
@@ -316,8 +316,8 @@ func runWorkloadClusterDryRun(workloadClusterName string) {
 			// "10",
 		},
 		Env:    append(os.Environ(), envVars...),
-		Stdout: log.StdOutLogBridge,
-		Stderr: log.StdErrLogBridge,
+		Stdout: log.InfoWriter,
+		Stderr: log.ErrorWriter,
 	})
 
 	if err != nil {
@@ -339,8 +339,8 @@ func runWorkloadCluster(workloadClusterName string) {
 			// "10",
 		},
 		Env:    append(os.Environ(), envVars...),
-		Stdout: log.StdOutLogBridge,
-		Stderr: log.StdErrLogBridge,
+		Stdout: log.InfoWriter,
+		Stderr: log.ErrorWriter,
 	})
 
 	if err != nil {
@@ -363,8 +363,8 @@ func deleteWorkloadCluster(workloadClusterName string) {
 			// "10",
 		},
 		Env:    append(os.Environ(), envVars...),
-		Stdout: log.StdOutLogBridge,
-		Stderr: log.StdErrLogBridge,
+		Stdout: log.InfoWriter,
+		Stderr: log.ErrorWriter,
 	})
 
 	if err != nil {
@@ -412,7 +412,7 @@ func listWorkloadClusters() WorkloadClusters {
 
 	var clusterListOutput bytes.Buffer
 
-	multiWriter := io.MultiWriter(&clusterListOutput, log.StdOutLogBridge)
+	multiWriter := io.MultiWriter(&clusterListOutput, log.InfoWriter)
 
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
@@ -424,7 +424,7 @@ func listWorkloadClusters() WorkloadClusters {
 		},
 		Env:    os.Environ(),
 		Stdout: multiWriter,
-		Stderr: log.StdErrLogBridge,
+		Stderr: log.ErrorWriter,
 	})
 
 	if err != nil {
@@ -465,8 +465,8 @@ func checkTanzuManagementClusterCLIPluginInstallation() {
 			"management-cluster",
 			"version",
 		},
-		Stdout: log.StdOutLogBridge,
-		Stderr: log.StdErrLogBridge,
+		Stdout: log.InfoWriter,
+		Stderr: log.ErrorWriter,
 	})
 
 	if err != nil {
@@ -486,8 +486,8 @@ func checkTanzuWorkloadClusterCLIPluginInstallation() {
 			"cluster",
 			"version",
 		},
-		Stdout: log.StdOutLogBridge,
-		Stderr: log.StdErrLogBridge,
+		Stdout: log.InfoWriter,
+		Stderr: log.ErrorWriter,
 	})
 
 	if err != nil {

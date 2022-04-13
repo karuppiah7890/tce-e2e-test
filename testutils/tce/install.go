@@ -120,8 +120,8 @@ func Install(version string) error {
 	installScript := filepath.Join(targetDirectory, tceDir.Name(), fmt.Sprintf("install.%s", installScriptExtension))
 
 	cmd := exec.Command(installScript)
-	cmd.Stdout = log.StdOutLogBridge
-	cmd.Stderr = log.StdErrLogBridge
+	cmd.Stdout = log.InfoWriter
+	cmd.Stderr = log.ErrorWriter
 
 	if operatingSystem == "linux" || operatingSystem == "darwin" {
 		cmd.Env = append(os.Environ(), "ALLOW_INSTALL_AS_ROOT=true")

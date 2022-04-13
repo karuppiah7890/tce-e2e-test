@@ -34,22 +34,22 @@ func Errorf(template string, args ...interface{}) {
 	zap.S().Errorf(template, args...)
 }
 
-// stdOutLogBridge implements the io.Writer interface
-type stdOutLogBridge struct{}
+// infoWriter implements the io.Writer interface
+type infoWriter struct{}
 
-func (s stdOutLogBridge) Write(p []byte) (n int, err error) {
+func (s infoWriter) Write(p []byte) (n int, err error) {
 	zap.S().Info(string(p))
 	return len(p), nil
 }
 
-var StdOutLogBridge = stdOutLogBridge{}
+var InfoWriter = infoWriter{}
 
-// stdErrLogBridge implements the io.Writer interface
-type stdErrLogBridge struct{}
+// errorWriter implements the io.Writer interface
+type errorWriter struct{}
 
-func (s stdErrLogBridge) Write(p []byte) (n int, err error) {
+func (s errorWriter) Write(p []byte) (n int, err error) {
 	zap.S().Error(string(p))
 	return len(p), nil
 }
 
-var StdErrLogBridge = stdErrLogBridge{}
+var ErrorWriter = errorWriter{}
