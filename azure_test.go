@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"k8s.io/client-go/util/homedir"
@@ -44,7 +45,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	checkTanzuWorkloadClusterCLIPluginInstallation()
 
 	// check if docker is installed. This is required by tanzu CLI I think, both docker client CLI and docker daemon
-	checkDockerCLIInstallation()
+	docker.CheckDockerInstallation()
 	// check if kubectl is installed. This is required by tanzu CLI to apply using kubectl apply to create cluster
 	checkKubectlCLIInstallation()
 
@@ -667,13 +668,9 @@ func checkTanzuWorkloadClusterCLIPluginInstallation() {
 }
 
 func checkDockerCLIInstallation() {
-	log.Info("Checking docker CLI installation")
-
-	path, err := exec.LookPath("docker")
-	if err != nil {
-		log.Fatalf("docker CLI is not installed")
-	}
-	log.Infof("docker CLI is available at path: %s\n", path)
+	docker.CheckDockerInstallation()
+	docker.StopRunningContainer("test-worker")
+	//docker.StopAllRunningContainer()
 }
 
 func checkKubectlCLIInstallation() {

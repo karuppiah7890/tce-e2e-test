@@ -2,7 +2,7 @@
 !.env.sample*
 
 .vscode
-
+.idea
 *.log
 
 *.tar.gz
