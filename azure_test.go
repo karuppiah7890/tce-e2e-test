@@ -737,7 +737,7 @@ func tanzuAzureConfig(clusterName string) TanzuConfig {
 		"CLUSTER_NAME":                     clusterName,
 		"INFRASTRUCTURE_PROVIDER":          "azure",
 		"CLUSTER_PLAN":                     "dev",
-		"AZURE_LOCATION":                   "australiacentral",
+		"AZURE_LOCATION":                   "australiaeast",
 		"AZURE_CONTROL_PLANE_MACHINE_TYPE": "Standard_D4s_v3",
 		"AZURE_NODE_MACHINE_TYPE":          "Standard_D4s_v3",
 		"OS_ARCH":                          "amd64",
