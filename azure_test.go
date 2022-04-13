@@ -61,7 +61,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	cred := azure.Login()
 
 	// TODO: make the below function return an error and handle the error to log and exit?
-	acceptImageLicense(azureTestSecrets.SubscriptionID, cred)
+	acceptAzureImageLicense(azureTestSecrets.SubscriptionID, cred)
 
 	// Create random names for management and workload clusters so that we can use them to name the test clusters we are going to
 	// create. Ensure that these names are not already taken - check the resource group names to double check :) As Resource group name
@@ -164,7 +164,10 @@ func getKubeContextForTanzuCluster(clusterName string) string {
 	return fmt.Sprintf("%s-admin@%s", clusterName, clusterName)
 }
 
-func acceptImageLicense(subscriptionID string, cred *azidentity.ClientSecretCredential) {
+// This naming is for clarity until we move the function to some azure specific
+// package then we can remove the reference to azure from it and rename
+// it back to acceptImageLicense
+func acceptAzureImageLicense(subscriptionID string, cred *azidentity.ClientSecretCredential) {
 	// We have hardcoded the value of the inputs required for accepting Azure VM image license terms.
 	// TODO: Use management-cluster / workload cluster dry run (--dry-run) to get Azure VM image names / skus, offering, publisher
 	azureVmImagePublisher := "vmware-inc"
