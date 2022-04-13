@@ -244,8 +244,17 @@ func runManagementClusterDryRun(managementClusterName string) {
 			// "-v",
 			// "10",
 		},
-		Env:    append(os.Environ(), envVars...),
+		Env: append(os.Environ(), envVars...),
+		// TODO: Do we really want to output to log.InfoWriter ? Is this
+		// data necessary in the logs? This data will contain secrets but for now we haven't masked secrets
+		// in logs, also, even if we mask secrets, is this data useful and necessary?
+		// The data in log can help development but that's all
 		Stdout: log.InfoWriter,
+		// TODO: Do we really want to output to log.ErrorWriter ? Is this
+		// data necessary in the logs? This data will contain secrets but for now we haven't masked secrets
+		// in logs, also, even if we mask secrets, is this data useful and necessary?
+		// The data in log can help development and also
+		// during actual runs to check if there are any errors from the command, hmm
 		Stderr: log.ErrorWriter,
 	})
 
@@ -315,8 +324,17 @@ func runWorkloadClusterDryRun(workloadClusterName string) {
 			// "-v",
 			// "10",
 		},
-		Env:    append(os.Environ(), envVars...),
+		Env: append(os.Environ(), envVars...),
+		// TODO: Do we really want to output to log.InfoWriter ? Is this
+		// data necessary in the logs? This data will contain secrets but for now we haven't masked secrets
+		// in logs, also, even if we mask secrets, is this data useful and necessary?
+		// The data in log can help development but that's all
 		Stdout: log.InfoWriter,
+		// TODO: Do we really want to output to log.ErrorWriter ? Is this
+		// data necessary in the logs? This data will contain secrets but for now we haven't masked secrets
+		// in logs, also, even if we mask secrets, is this data useful and necessary?
+		// The data in log can help development and also
+		// during actual runs to check if there are any errors from the command, hmm
 		Stderr: log.ErrorWriter,
 	})
 
@@ -412,6 +430,9 @@ func listWorkloadClusters() WorkloadClusters {
 
 	var clusterListOutput bytes.Buffer
 
+	// TODO: Do we really want to output to log.InfoWriter ? Is this
+	// data necessary in the logs? This function will be called
+	// a lot of times. The data in log can help development
 	multiWriter := io.MultiWriter(&clusterListOutput, log.InfoWriter)
 
 	exitCode, err := cliRunner(Cmd{
@@ -424,6 +445,10 @@ func listWorkloadClusters() WorkloadClusters {
 		},
 		Env:    os.Environ(),
 		Stdout: multiWriter,
+		// TODO: Do we really want to output to log.ErrorWriter ? Is this
+		// data necessary in the logs? This function will be called
+		// a lot of times. The data in log can help development and also
+		// during actual runs to check if there are any errors from the command, hmm
 		Stderr: log.ErrorWriter,
 	})
 
