@@ -42,6 +42,10 @@ func (s infoWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+// TODO: Convert this into a function maybe? Which returns a singleton, instead of
+// exposing a variable that can be changed by other entities in other packages.
+// But yeah, logWriter struct type is not exported, so people can't change it to
+// any other value
 var InfoWriter = infoWriter{}
 
 // errorWriter implements the io.Writer interface
@@ -52,4 +56,8 @@ func (s errorWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+// TODO: Convert this into a function maybe? Which returns a singleton, instead of
+// exposing a variable that can be changed by other entities in other packages.
+// But yeah, errorWriter struct type is not exported, so people can't change it to
+// any other value
 var ErrorWriter = errorWriter{}
