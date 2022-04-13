@@ -48,8 +48,8 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// check if kubectl is installed. This is required by tanzu CLI to apply using kubectl apply to create cluster
 	checkKubectlCLIInstallation()
 
-	if runtime.GOOS == "windows" || runtime.GOOS == "linux" {
-		log.Warn("Warning: This test has been tested only on Mac OS till now. Support for Linux and Windows has not been tested, so it's experimental and not guranteed to work!")
+	if runtime.GOOS == "windows" {
+		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guranteed to work!")
 	}
 
 	// TODO: Ensure package plugin is present in case package tests are gonna be executed.
