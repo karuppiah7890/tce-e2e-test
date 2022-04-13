@@ -111,10 +111,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// and cleanup management cluster and then cleanup workload cluster
 	runWorkloadCluster(workloadClusterName)
 
-	// TODO: check if workload cluster is running by doing something similar to
-	// `tanzu cluster list | grep "${WORKLOAD_CLUSTER_NAME}" | grep running`
-	// or better, use -o json, we have a function for that and use that data :D
-	// listWorkloadClusters is the function. Check if the workload cluster is running
+	checkWorkloadClusterIsRunning(workloadClusterName)
 
 	// TODO: Handle errors
 	getWorkloadClusterKubeConfig(workloadClusterName)
@@ -393,6 +390,35 @@ func runWorkloadCluster(workloadClusterName string) {
 	if err != nil {
 		log.Fatalf("Error occurred while deploying workload cluster. Exit code: %v. Error: %v", exitCode, err)
 	}
+}
+
+func checkWorkloadClusterIsRunning(workloadClusterName string) {
+	// TODO: Should this function use a loop and wait (with timeout) for workload cluster to show up in the list
+	// of workload clusters and be in running state? Or will Tanzu exit workload cluster creation
+	// command only when workload cluster shows up in the list and is in running state? Gotta check
+	workloadClusters := listWorkloadClusters()
+
+	isClusterPresent := false
+	clusterStatus := ""
+
+	for _, workloadCluster := range workloadClusters {
+		if workloadCluster.Name == workloadClusterName {
+			isClusterPresent = true
+			clusterStatus = workloadCluster.Status
+		}
+	}
+
+	if !isClusterPresent {
+		// Return errors for caller to handle maybe? Instead of abrupt stop?
+		log.Fatalf("Workload cluster %s is not present in the list of workload clusters", workloadClusterName)
+	}
+
+	if clusterStatus != "running" {
+		// Return errors for caller to handle maybe? Instead of abrupt stop?
+		log.Fatalf("Workload cluster %s is not in running status, it is in %s status", workloadClusterName, clusterStatus)
+	}
+
+	log.Infof("Workload cluster %s is running successfully\n", workloadClusterName)
 }
 
 func getWorkloadClusterKubeConfig(workloadClusterName string) {
