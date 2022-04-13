@@ -88,8 +88,8 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: check if management cluster is running by doing something similar to
 	// `tanzu management-cluster get | grep "${MANAGEMENT_CLUSTER_NAME}" | grep running`
 
-	// TODO: get management cluster kubeconfig by running
-	// `tanzu management-cluster kubeconfig get ${MANAGEMENT_CLUSTER_NAME} --admin`
+	// TODO: Handle errors
+	getManagementClusterKubeConfig(managementClusterName)
 
 	kubeConfigPath, err := getKubeConfigPath()
 	if err != nil {
@@ -116,8 +116,8 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// or better, use -o json, we have a function for that and use that data :D
 	// listWorkloadClusters is the function. Check if the workload cluster is running
 
-	// TODO: get workload cluster kubeconfig by running the command
-	// `tanzu cluster kubeconfig get ${WORKLOAD_CLUSTER_NAME} --admin`
+	// TODO: Handle errors
+	getWorkloadClusterKubeConfig(workloadClusterName)
 
 	workloadClusterKubeContext := getKubeContextForTanzuCluster(workloadClusterName)
 
@@ -289,6 +289,32 @@ func runManagementCluster(managementClusterName string) {
 	}
 }
 
+func getManagementClusterKubeConfig(managementClusterName string) {
+	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(managementClusterName))
+	exitCode, err := cliRunner(Cmd{
+		// TODO: Replace magic strings like "tanzu", "management-cluster" etc
+		Name: "tanzu",
+		Args: []string{
+			"management-cluster",
+			"kubeconfig",
+			"get",
+			managementClusterName,
+			"--admin",
+			// TODO: Should we add verbosity flag and value by default? or
+			// let the user define the verbosity (eg 0-9) when running the tests maybe?
+			// "-v",
+			// "9",
+		},
+		Env:    append(os.Environ(), envVars...),
+		Stdout: log.InfoWriter,
+		Stderr: log.ErrorWriter,
+	})
+
+	if err != nil {
+		log.Fatalf("Error occurred while getting management cluster kubeconfig. Exit code: %v. Error: %v", exitCode, err)
+	}
+}
+
 func deleteManagementCluster(managementClusterName string) {
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(managementClusterName))
 	exitCode, err := cliRunner(Cmd{
@@ -366,6 +392,31 @@ func runWorkloadCluster(workloadClusterName string) {
 
 	if err != nil {
 		log.Fatalf("Error occurred while deploying workload cluster. Exit code: %v. Error: %v", exitCode, err)
+	}
+}
+
+func getWorkloadClusterKubeConfig(workloadClusterName string) {
+	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(workloadClusterName))
+	exitCode, err := cliRunner(Cmd{
+		Name: "tanzu",
+		Args: []string{
+			"cluster",
+			"kubeconfig",
+			"get",
+			workloadClusterName,
+			"--admin",
+			// TODO: Should we add verbosity flag and value by default? or
+			// let the user define the verbosity (eg 0-9) when running the tests maybe?
+			// "-v",
+			// "9",
+		},
+		Env:    append(os.Environ(), envVars...),
+		Stdout: log.InfoWriter,
+		Stderr: log.ErrorWriter,
+	})
+
+	if err != nil {
+		log.Fatalf("Error occurred while getting workload cluster kubeconfig. Exit code: %v. Error: %v", exitCode, err)
 	}
 }
 
@@ -724,6 +775,7 @@ func printClusterInformation(kubeConfigPath string, kubeContext string) error {
 
 	log.Info("\n\nNode Name\tNode Phase")
 	for _, node := range nodes.Items {
+		// TODO: There is some issue here, node.Status.Phase gives empty string I think
 		log.Infof("%s\t%s", node.Name, node.Status.Phase)
 	}
 
