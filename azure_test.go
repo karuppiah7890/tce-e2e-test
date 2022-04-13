@@ -382,7 +382,7 @@ type WorkloadClusters []WorkloadCluster
 func waitForWorkloadClusterDeletion(workloadClusterName string) {
 	// TODO: Use timer for timeout and ticker for polling every few seconds
 	// instead of using sleep
-	for i := 0; i < 120; i++ {
+	for i := 0; i < 60; i++ {
 		workloadClusters := listWorkloadClusters()
 
 		isClusterPresent := false
@@ -400,7 +400,7 @@ func waitForWorkloadClusterDeletion(workloadClusterName string) {
 			return
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 
 	// TODO: maybe return error instead of fatal stop?
