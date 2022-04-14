@@ -2,6 +2,7 @@ package extract
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -58,9 +59,52 @@ func getCompressionFormat(compressedFile string, supportedCompressedFormats []st
 	return "", false
 }
 
+// TODO: Check this function in a detailed manner and simplify it and also check if it works well enough
+// for our cases of zip files. Code from https://golang.cafe/blog/golang-unzip-file-example.html
 // TODO: Replace this with a third party library maybe? So that we have less code to maintain
 func extractZip(compressedFile string, targetDirectoryToExtract string) error {
-	return fmt.Errorf("extracting zip files is not yet implemented")
+	zipArchive, err := zip.OpenReader(compressedFile)
+	if err != nil {
+		return fmt.Errorf("error occurred while trying to opening and process %s: %v", compressedFile, err)
+	}
+	defer zipArchive.Close()
+
+	for _, f := range zipArchive.File {
+		filePath := filepath.Join(targetDirectoryToExtract, f.Name)
+		log.Info("unzipping file ", filePath)
+
+		if !strings.HasPrefix(filePath, filepath.Clean(targetDirectoryToExtract)+string(os.PathSeparator)) {
+			return fmt.Errorf("invalid file path")
+		}
+		if f.FileInfo().IsDir() {
+			log.Info("creating directory...")
+			os.MkdirAll(filePath, os.ModePerm)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			return fmt.Errorf("error occurred while trying to process %s: %v", compressedFile, err)
+		}
+
+		dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return fmt.Errorf("error occurred while trying to process %s: %v", compressedFile, err)
+		}
+
+		fileInArchive, err := f.Open()
+		if err != nil {
+			return fmt.Errorf("error occurred while trying to process %s: %v", compressedFile, err)
+		}
+
+		if _, err := io.Copy(dstFile, fileInArchive); err != nil {
+			return fmt.Errorf("error occurred while trying to process %s: %v", compressedFile, err)
+		}
+
+		dstFile.Close()
+		fileInArchive.Close()
+	}
+
+	return nil
 }
 
 // TODO: Replace this with a third party library maybe? So that we have less code to maintain
