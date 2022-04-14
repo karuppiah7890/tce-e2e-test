@@ -9,19 +9,57 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"testing"
 	"time"
+
+	"gopkg.in/yaml.v3"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
+
+	// TODO: Rename imports in a better manner, like, use capzABC and capiDEF etc for naming
+	// CAPZ and CAPI stuff
+
+	infrav1alpha3 "sigs.k8s.io/cluster-api-provider-azure/api/v1alpha3"
+	infrav1alpha4 "sigs.k8s.io/cluster-api-provider-azure/api/v1alpha4"
+	infrav1alpha3exp "sigs.k8s.io/cluster-api-provider-azure/exp/api/v1alpha3"
+	infrav1alpha4exp "sigs.k8s.io/cluster-api-provider-azure/exp/api/v1alpha4"
+	infrav1beta1exp "sigs.k8s.io/cluster-api-provider-azure/exp/api/v1beta1"
+
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	clusterv1alpha3 "sigs.k8s.io/cluster-api/api/v1alpha3"
+	clusterv1alpha4 "sigs.k8s.io/cluster-api/api/v1alpha4"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+
+	capiBootstrapKubeadmv1beta "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
+	capiControlplaneKubeadmv1beta "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+
+	expv1alpha3 "sigs.k8s.io/cluster-api/exp/api/v1alpha3"
+	expv1alpha4 "sigs.k8s.io/cluster-api/exp/api/v1alpha4"
+	expv1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
+
+	addonsv1alpha3 "sigs.k8s.io/cluster-api/exp/addons/api/v1alpha3"
+	addonsv1alpha4 "sigs.k8s.io/cluster-api/exp/addons/api/v1alpha4"
+	addonsv1 "sigs.k8s.io/cluster-api/exp/addons/api/v1beta1"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	kubeRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/homedir"
+	capzv1beta1 "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/marketplaceordering/armmarketplaceordering"
 )
+
+var scheme = kubeRuntime.NewScheme()
+
+func init() {
+	registerCustomResources()
+}
 
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("azure-mgmt-wkld-e2e")
@@ -61,9 +99,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	cred := azure.Login()
 
-	// TODO: make the below function return an error and handle the error to log and exit?
-	acceptAzureImageLicense(azureTestSecrets.SubscriptionID, cred)
-
 	// Create random names for management and workload clusters so that we can use them to name the test clusters we are going to
 	// create. Ensure that these names are not already taken - check the resource group names to double check :) As Resource group name
 	// is based on the cluster name
@@ -80,7 +115,10 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// the cluster or cluster resources using Tanzu to be able to do this instead of encoding the pipeline
 	// metadata in the cluster name but that's a good idea too :)
 
-	runManagementClusterDryRun(managementClusterName)
+	azureMarketplaceImageInfoForManagementCluster := getAzureMarketplaceImageInfoForManagementCluster(managementClusterName)
+
+	// TODO: make the below function return an error and handle the error to log and exit?
+	acceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForManagementCluster...)
 
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster
@@ -106,7 +144,10 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
 
-	runWorkloadClusterDryRun(workloadClusterName)
+	azureMarketplaceImageInfoForWorkloadCluster := getAzureMarketplaceImageInfoForWorkloadCluster(workloadClusterName)
+
+	// TODO: make the below function return an error and handle the error to log and exit?
+	acceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForWorkloadCluster...)
 
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster and then cleanup workload cluster
@@ -162,19 +203,26 @@ func getKubeContextForTanzuCluster(clusterName string) string {
 	return fmt.Sprintf("%s-admin@%s", clusterName, clusterName)
 }
 
+// TODO: Should we just use one function acceptAzureImageLicenses with the whole implementation? There will be a for loop with a big body though
+func acceptAzureImageLicenses(subscriptionID string, cred *azidentity.ClientSecretCredential, azureMarketplaceImages ...*capzv1beta1.AzureMarketplaceImage) {
+	for _, azureMarketplaceImage := range azureMarketplaceImages {
+		acceptAzureImageLicense(subscriptionID, cred, azureMarketplaceImage)
+	}
+}
+
 // This naming is for clarity until we move the function to some azure specific
 // package then we can remove the reference to azure from it and rename
 // it back to acceptImageLicense
-func acceptAzureImageLicense(subscriptionID string, cred *azidentity.ClientSecretCredential) {
+func acceptAzureImageLicense(subscriptionID string, cred *azidentity.ClientSecretCredential, azureMarketplaceImage *capzv1beta1.AzureMarketplaceImage) {
 	// We have hardcoded the value of the inputs required for accepting Azure VM image license terms.
 	// TODO: Use management-cluster / workload cluster dry run (--dry-run) to get Azure VM image names / skus, offering, publisher
-	azureVmImagePublisher := "vmware-inc"
+	azureVmImagePublisher := azureMarketplaceImage.Publisher
 	// The value k8s-1dot21dot5-ubuntu-2004 comes from latest TKG BOM file based on OS arch, OS name and OS version
 	// provided in test/azure/cluster-config.yaml in TCE repo. This value needs to be changed manually whenever there's going to
 	// be a change in the underlying Tanzu Framework CLI version (management-cluster and cluster plugins) causing new
 	// TKr BOMs to be used with new Azure VM images which have different image billing plan SKU
-	azureVmImageBillingPlanSku := "k8s-1dot22dot8-ubuntu-2004"
-	azureVmImageOffer := "tkg-capi"
+	azureVmImageBillingPlanSku := azureMarketplaceImage.SKU
+	azureVmImageOffer := azureMarketplaceImage.Offer
 
 	ctx := context.Background()
 	client := armmarketplaceordering.NewMarketplaceAgreementsClient(subscriptionID, cred, nil)
@@ -231,7 +279,9 @@ func acceptAzureImageLicense(subscriptionID string, cred *azidentity.ClientSecre
 	}
 }
 
-func runManagementClusterDryRun(managementClusterName string) {
+func getAzureMarketplaceImageInfoForManagementCluster(managementClusterName string) []*capzv1beta1.AzureMarketplaceImage {
+	var managementClusterCreateDryRunOutputBuffer bytes.Buffer
+
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(managementClusterName))
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
@@ -245,12 +295,8 @@ func runManagementClusterDryRun(managementClusterName string) {
 			// "-v",
 			// "10",
 		},
-		Env: append(os.Environ(), envVars...),
-		// TODO: Do we really want to output to log.InfoWriter ? Is this
-		// data necessary in the logs? This data will contain secrets but for now we haven't masked secrets
-		// in logs, also, even if we mask secrets, is this data useful and necessary?
-		// The data in log can help development but that's all
-		Stdout: log.InfoWriter,
+		Env:    append(os.Environ(), envVars...),
+		Stdout: &managementClusterCreateDryRunOutputBuffer,
 		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
 		// to standard error, which are kind of like information, apart from actual errors, so showing
 		// everything as error is misleading. Gotta think what to do about this. The main problem is
@@ -266,7 +312,178 @@ func runManagementClusterDryRun(managementClusterName string) {
 	})
 
 	if err != nil {
+		// TODO: Should we print the whole command as part of the error? cliRunner will print it though, in this case
 		log.Fatalf("Error occurred while running management cluster dry run. Exit code: %v. Error: %v", exitCode, err)
+	}
+
+	managementClusterCreateDryRunOutput, err := io.ReadAll(&managementClusterCreateDryRunOutputBuffer)
+	if err != nil {
+		// TODO: Should we print the whole command as part of the error?
+		log.Fatalf("Error occurred while reading output of management cluster create dry run: %v", err)
+	}
+
+	objects := parseK8sYamlAndFetchAzureMachineTemplates(managementClusterCreateDryRunOutput)
+
+	marketplaces := []*capzv1beta1.AzureMarketplaceImage{}
+
+	for _, object := range objects {
+		azureMachineTemplate, ok := object.(*capzv1beta1.AzureMachineTemplate)
+		if !ok {
+			log.Fatalf("Error occurred while parsing output of management cluster create dry run")
+		}
+
+		marketplaces = append(marketplaces, azureMachineTemplate.Spec.Template.Spec.Image.Marketplace)
+	}
+
+	return marketplaces
+}
+
+// Maybe return []*capzv1beta1.AzureMachineTemplate directly? Instead of []kubeRuntime.Object
+// TODO: Rename this in a better manner? The function name and argument too
+func parseK8sYamlAndFetchAzureMachineTemplates(fileR []byte) []kubeRuntime.Object {
+	registerCustomResources()
+
+	// TODO: Should we just use simple plain string match since we just want to pick AzureMachineTemplate only?
+	// But yeah, in future we might parse other stuff, but as of now I don't see any such thing, so we could simplify this
+	// For more types, use something like `(Role|ConfigMap)` etc
+	acceptedK8sTypes := regexp.MustCompile(`(AzureMachineTemplate)`)
+	sepYamlFilesBytes, err := SplitYAML(fileR)
+	if err != nil {
+		// return and handle error?
+		log.Fatalf("Error while splitting YAML file. Err was: %s", err)
+	}
+	retVal := make([]kubeRuntime.Object, 0, len(sepYamlFilesBytes))
+	for _, fBytes := range sepYamlFilesBytes {
+		f := string(fBytes)
+		if f == "\n" || f == "" {
+			// ignore empty cases
+			continue
+		}
+
+		decode := serializer.NewCodecFactory(scheme).UniversalDeserializer().Decode
+		obj, groupVersionKind, err := decode(fBytes, nil, nil)
+
+		if err != nil {
+			// return and handle error?
+			log.Fatalf("Error while decoding YAML object. Err was: %s", err)
+			continue
+		}
+
+		if !acceptedK8sTypes.MatchString(groupVersionKind.Kind) {
+			// The output contains K8s object types which are not needed so we are skipping this object with type groupVersionKind.Kind
+		} else {
+			retVal = append(retVal, obj)
+		}
+
+	}
+	return retVal
+}
+
+func SplitYAML(resources []byte) ([][]byte, error) {
+	dec := yaml.NewDecoder(bytes.NewReader(resources))
+
+	var res [][]byte
+	for {
+		var value interface{}
+		err := dec.Decode(&value)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		valueBytes, err := yaml.Marshal(value)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, valueBytes)
+	}
+	return res, nil
+}
+
+func registerCustomResources() {
+	err := clientgoscheme.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+
+	err = apiextensionsv1.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+
+	err = clusterv1alpha3.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = clusterv1alpha4.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = clusterv1.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+
+	err = expv1alpha3.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = expv1alpha4.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = expv1.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+
+	err = addonsv1alpha3.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = addonsv1alpha4.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = addonsv1.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+
+	err = infrav1alpha3.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = infrav1alpha4.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = capzv1beta1.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = infrav1alpha3exp.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = infrav1alpha4exp.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+	err = infrav1beta1exp.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+
+	err = capiControlplaneKubeadmv1beta.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
+	}
+
+	err = capiBootstrapKubeadmv1beta.AddToScheme(scheme)
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -361,7 +578,9 @@ func deleteManagementCluster(managementClusterName string) {
 	}
 }
 
-func runWorkloadClusterDryRun(workloadClusterName string) {
+func getAzureMarketplaceImageInfoForWorkloadCluster(workloadClusterName string) []*capzv1beta1.AzureMarketplaceImage {
+	var workloadClusterCreateDryRunOutputBuffer bytes.Buffer
+
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(workloadClusterName))
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
@@ -380,7 +599,7 @@ func runWorkloadClusterDryRun(workloadClusterName string) {
 		// data necessary in the logs? This data will contain secrets but for now we haven't masked secrets
 		// in logs, also, even if we mask secrets, is this data useful and necessary?
 		// The data in log can help development but that's all
-		Stdout: log.InfoWriter,
+		Stdout: &workloadClusterCreateDryRunOutputBuffer,
 		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
 		// to standard error, which are kind of like information, apart from actual errors, so showing
 		// everything as error is misleading. Gotta think what to do about this. The main problem is
@@ -398,6 +617,27 @@ func runWorkloadClusterDryRun(workloadClusterName string) {
 	if err != nil {
 		log.Fatalf("Error occurred while running workload cluster dry run. Exit code: %v. Error: %v", exitCode, err)
 	}
+
+	workloadClusterCreateDryRunOutput, err := io.ReadAll(&workloadClusterCreateDryRunOutputBuffer)
+	if err != nil {
+		// TODO: Should we print the whole command as part of the error?
+		log.Fatalf("Error occurred while reading output of workload cluster create dry run: %v", err)
+	}
+
+	objects := parseK8sYamlAndFetchAzureMachineTemplates(workloadClusterCreateDryRunOutput)
+
+	marketplaces := []*capzv1beta1.AzureMarketplaceImage{}
+
+	for _, object := range objects {
+		azureMachineTemplate, ok := object.(*capzv1beta1.AzureMachineTemplate)
+		if !ok {
+			log.Fatalf("Error occurred while parsing output of workload cluster create dry run")
+		}
+
+		marketplaces = append(marketplaces, azureMachineTemplate.Spec.Template.Spec.Image.Marketplace)
+	}
+
+	return marketplaces
 }
 
 func runWorkloadCluster(workloadClusterName string) {
