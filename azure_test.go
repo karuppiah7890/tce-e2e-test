@@ -682,11 +682,6 @@ func listWorkloadClusters() WorkloadClusters {
 
 	var clusterListOutput bytes.Buffer
 
-	// TODO: Do we really want to output to log.InfoWriter ? Is this
-	// data necessary in the logs? This function will be called
-	// a lot of times. The data in log can help development
-	multiWriter := io.MultiWriter(&clusterListOutput, log.InfoWriter)
-
 	exitCode, err := cliRunner(Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -696,7 +691,7 @@ func listWorkloadClusters() WorkloadClusters {
 			"json",
 		},
 		Env:    os.Environ(),
-		Stdout: multiWriter,
+		Stdout: &clusterListOutput,
 		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
 		// to standard error, which are kind of like information, apart from actual errors, so showing
 		// everything as error is misleading. Gotta think what to do about this. The main problem is
