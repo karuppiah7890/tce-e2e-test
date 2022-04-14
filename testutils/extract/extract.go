@@ -71,6 +71,7 @@ func extractZip(compressedFile string, targetDirectoryToExtract string) error {
 
 	for _, f := range zipArchive.File {
 		filePath := filepath.Join(targetDirectoryToExtract, f.Name)
+		// TODO: Should we log this? This gives out a lot of logs when extracting TCE windows zip file
 		log.Info("unzipping file ", filePath)
 
 		if !strings.HasPrefix(filePath, filepath.Clean(targetDirectoryToExtract)+string(os.PathSeparator)) {
