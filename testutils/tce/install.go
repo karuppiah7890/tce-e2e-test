@@ -15,6 +15,9 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 )
 
+const SHELL = "sh"
+const BAT = "bat"
+
 // TODO: Should we support getTceArtifactUrl("v0.11.0") too? Or just have one of them? Which one?
 // Example: getTceArtifactUrl("0.11.0")
 func getTceArtifactUrl(version string) (string, error) {
@@ -97,7 +100,7 @@ func Install(version string) error {
 	tceDir := dirEntries[0]
 
 	operatingSystem := runtime.GOOS
-	installScriptExtensions := map[string]string{platforms.LINUX: "sh", platforms.DARWIN: "sh", platforms.WINDOWS: "bat"}
+	installScriptExtensions := map[string]string{platforms.LINUX: SHELL, platforms.DARWIN: SHELL, platforms.WINDOWS: BAT}
 	// TODO: Maybe merge the supported OSes and script extension data as script extension should be
 	// present for each supported operating system in this case and currently there's a duplication of
 	// data here
