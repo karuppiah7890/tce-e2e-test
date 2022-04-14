@@ -19,16 +19,9 @@ import (
 func getTceArtifactUrl(version string) (string, error) {
 	log.Infof("Getting TCE artifact URL for version %s", version)
 
-	// TODO: Maybe merge supported OSes and architectures list in the form of linux/amd64 , darwin/amd64 etc,
-	// since it's possible that some architectures are supported only in some OSes, for example linux/arm64 might
-	// be supported in the future but maybe darwin/arm64 is not supported, in which case having a separate list for
-	// architecture and OS doesn't make sense and makes things harder. It's better to have a list similar to what
-	// `go tool dist list` provides and use it to check support :)
+	// TODO: Convert magic strings like "linux/amd64", "darwin/amd64", "windows/amd64" to constants
+	supportedPlatforms := []string{"linux/amd64", "darwin/amd64", "windows/amd64"}
 
-	// TODO: Convert magic strings like "amd64" to constants
-	supportedArchitectures := []string{"amd64"}
-	// TODO: Convert magic strings like "linux", "darwin", "windows" to constants
-	supportedOperatingSystems := []string{"linux", "darwin", "windows"}
 	// TODO: Maybe merge the supported OSes and artifact extension data as artifact extension should be
 	// present for each supported operating system in this case and currently there's a duplication of
 	// data here
@@ -37,14 +30,10 @@ func getTceArtifactUrl(version string) (string, error) {
 	artifactExtensions := map[string]string{"linux": "tar.gz", "darwin": "tar.gz", "windows": "zip"}
 
 	architecture := runtime.GOARCH
-	if !isPresentIn(architecture, supportedArchitectures) {
-		return "", fmt.Errorf("architecture %s is not supported by TCE. Supported architectures: %v", architecture, supportedArchitectures)
-	}
-
 	operatingSystem := runtime.GOOS
-
-	if !isPresentIn(operatingSystem, supportedOperatingSystems) {
-		return "", fmt.Errorf("operating System %s is not supported by TCE. Supported operating systems: %v", operatingSystem, supportedOperatingSystems)
+	platform := fmt.Sprintf("%s/%s", operatingSystem, architecture)
+	if !isPresentIn(platform, supportedPlatforms) {
+		return "", fmt.Errorf("platform %s is not supported by TCE. Supported platforms: %v", platform, supportedPlatforms)
 	}
 
 	artifactExtension := artifactExtensions[operatingSystem]
