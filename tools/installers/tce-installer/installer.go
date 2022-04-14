@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tce"
 )
@@ -23,7 +25,12 @@ import (
 func main() {
 	log.InitLogger("tce-install")
 	// TODO: Get version from flags (--version) or arguments
-	version := "0.11.0"
+
+	if len(os.Args) != 2 {
+		log.Fatal("Provide exactly one argument with TCE version. Example Usage: tce-installer 0.11.0")
+	}
+
+	version := os.Args[1]
 	err := tce.Install(version)
 	if err != nil {
 		log.Fatalf("error occurred while installing TCE version %s: %v", version, err)
