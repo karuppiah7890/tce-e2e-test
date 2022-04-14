@@ -12,6 +12,7 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/download"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/extract"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 )
 
 // TODO: Should we support getTceArtifactUrl("v0.11.0") too? Or just have one of them? Which one?
@@ -25,9 +26,7 @@ func getTceArtifactUrl(version string) (string, error) {
 	// TODO: Maybe merge the supported OSes and artifact extension data as artifact extension should be
 	// present for each supported operating system in this case and currently there's a duplication of
 	// data here
-	// TODO: Convert magic strings like "tar.gz", "zip" to constants
-	// TODO: Convert magic strings like "linux", "darwin", "windows" to constants
-	artifactExtensions := map[string]string{"linux": "tar.gz", "darwin": "tar.gz", "windows": "zip"}
+	artifactExtensions := map[string]string{platforms.LINUX: extract.TARGZ, platforms.DARWIN: extract.TARGZ, platforms.WINDOWS: extract.ZIP}
 
 	architecture := runtime.GOARCH
 	operatingSystem := runtime.GOOS
@@ -99,7 +98,7 @@ func Install(version string) error {
 	tceDir := dirEntries[0]
 
 	operatingSystem := runtime.GOOS
-	installScriptExtensions := map[string]string{"linux": "sh", "darwin": "sh", "windows": "bat"}
+	installScriptExtensions := map[string]string{platforms.LINUX: "sh", platforms.DARWIN: "sh", platforms.WINDOWS: "bat"}
 	// TODO: Maybe merge the supported OSes and script extension data as script extension should be
 	// present for each supported operating system in this case and currently there's a duplication of
 	// data here
@@ -112,7 +111,7 @@ func Install(version string) error {
 	cmd.Stdout = log.InfoWriter
 	cmd.Stderr = log.ErrorWriter
 
-	if operatingSystem == "linux" || operatingSystem == "darwin" {
+	if operatingSystem == platforms.LINUX || operatingSystem == platforms.DARWIN {
 		cmd.Env = append(os.Environ(), "ALLOW_INSTALL_AS_ROOT=true")
 	}
 
