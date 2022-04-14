@@ -63,11 +63,7 @@ func Install(version string) error {
 		return fmt.Errorf("error getting TCE artifact URL: %v", err)
 	}
 
-	// TODO: Change name? tokens may not be great.
-	tokens := strings.Split(artifactUrl, "/")
-	// TODO: Change name? this is more of the artifact's file path but with just the name and nothing else,
-	// so it will get downloaded to the current working directory of the program
-	artifactName := tokens[len(tokens)-1]
+	artifactName := getArtifactNameFromUrl(artifactUrl)
 
 	// TODO: Maybe avoid downloading again if there is a file already present locally with same checksum?
 	// We could use data like etag header etc. This could act like a cache for us :) To avoid redownloading :D
@@ -83,10 +79,18 @@ func Install(version string) error {
 		return fmt.Errorf("error downloading TCE artifact: %v", err)
 	}
 
-	targetDirectory := filepath.Join(os.TempDir(), fmt.Sprintf("tce-install-%d", time.Now().Unix()))
+	targetDirectory := getTargetDirectory()
 	// extract tar ball or zip based on previous step
 	extract.Extract(artifactName, targetDirectory)
 
+	return invokeTceInstallScript(targetDirectory)
+}
+
+func getTargetDirectory() string {
+	return filepath.Join(os.TempDir(), fmt.Sprintf("tce-install-%d", time.Now().Unix()))
+}
+
+func invokeTceInstallScript(targetDirectory string) error {
 	dirEntries, err := os.ReadDir(targetDirectory)
 
 	if err != nil {
@@ -126,4 +130,14 @@ func Install(version string) error {
 	}
 
 	return nil
+}
+
+func getArtifactNameFromUrl(artifactUrl string) string {
+	// TODO: Change name? tokens may not be great.
+	tokens := strings.Split(artifactUrl, "/")
+	// TODO: Change name? this is more of the artifact's file path but with just the name and nothing else,
+	// so it will get downloaded to the current working directory of the program
+	artifactName := tokens[len(tokens)-1]
+
+	return artifactName
 }

@@ -8,3 +8,9 @@
 *.tar.gz
 
 *.zip
+
+# MacOS Finder files
+.DS_Store
+
+# windows binaries
+*.exe
