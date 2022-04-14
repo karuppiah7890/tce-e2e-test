@@ -84,7 +84,6 @@ func Install(version string) error {
 	// extract tar ball or zip based on previous step
 	extract.Extract(artifactName, targetDirectory)
 
-	// invoke install.sh or install.bat based on previous step
 	dirEntries, err := os.ReadDir(targetDirectory)
 
 	if err != nil {
@@ -107,6 +106,7 @@ func Install(version string) error {
 
 	installScript := filepath.Join(targetDirectory, tceDir.Name(), fmt.Sprintf("install.%s", installScriptExtension))
 
+	// invoke install.sh or install.bat based on OS
 	cmd := exec.Command(installScript)
 	cmd.Stdout = log.InfoWriter
 	cmd.Stderr = log.ErrorWriter
