@@ -110,11 +110,11 @@ func invokeTceInstallScript(targetDirectory string) error {
 	// data here
 
 	installScriptExtension := installScriptExtensions[operatingSystem]
-
-	installScript := filepath.Join(targetDirectory, tceDir.Name(), fmt.Sprintf("install.%s", installScriptExtension))
+	installScript := fmt.Sprintf("install.%s", installScriptExtension)
 
 	// invoke install.sh or install.bat based on OS
 	cmd := exec.Command(installScript)
+	cmd.Dir = filepath.Join(targetDirectory, tceDir.Name())
 	cmd.Stdout = log.InfoWriter
 	cmd.Stderr = log.ErrorWriter
 
