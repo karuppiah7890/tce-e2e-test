@@ -1,0 +1,5 @@
+set AZURE_CLIENT_ID="<client-id>"
+set AZURE_CLIENT_SECRET="<client-secret>"
+set AZURE_SSH_PUBLIC_KEY_B64="<rsa-ssh-public-key>"
+set AZURE_SUBSCRIPTION_ID="<subscription-id>"
+set AZURE_TENANT_ID="<tenant-id>"

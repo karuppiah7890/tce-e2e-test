@@ -1,0 +1,5 @@
+$Env:AZURE_CLIENT_ID="<client-id>"
+$Env:AZURE_CLIENT_SECRET="<client-secret>"
+$Env:AZURE_SSH_PUBLIC_KEY_B64="<rsa-ssh-public-key>"
+$Env:AZURE_SUBSCRIPTION_ID="<subscription-id>"
+$Env:AZURE_TENANT_ID="<tenant-id>"
