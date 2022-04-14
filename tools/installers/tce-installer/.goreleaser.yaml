@@ -2,7 +2,8 @@ before:
   hooks:
     - go mod tidy -compat=1.17
 builds:
-  - goos:
+  - id: "tce-installer"
+    goos:
       - linux
       - windows
       - darwin
