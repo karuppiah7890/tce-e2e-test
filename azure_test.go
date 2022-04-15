@@ -786,12 +786,6 @@ func checkTanzuWorkloadClusterCLIPluginInstallation() {
 	}
 }
 
-func checkDockerCLIInstallation() {
-	docker.CheckDockerInstallation()
-	docker.StopRunningContainer("test-worker")
-	//docker.StopAllRunningContainer()
-}
-
 func checkKubectlCLIInstallation() {
 	log.Info("Checking kubectl CLI installation")
 
