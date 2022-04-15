@@ -2,25 +2,35 @@ package docker
 
 import (
 	"context"
+	"os/exec"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
-	"os/exec"
 )
 
 func CheckDockerInstallation() {
 
-	log.Info("Checking docker CLI and Engine installation")
+	log.Info("Checking docker CLI and Docker Engine installation")
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		log.Fatalf("docker Engine is not installed")
+		log.Fatalf("error creating docker client: %v", err)
 	}
 	path, err := exec.LookPath("docker")
 	if err != nil {
-		log.Fatalf("Docker CLI is not installed")
+		log.Fatalf("docker CLI is not installed")
 	}
-	log.Infof("Docker cli is available at path: %s", path)
-	log.Infof("Docker version %s", cli.ClientVersion())
+	serverVersionInfo, err := cli.ServerVersion(context.TODO())
+	if err != nil {
+		// TODO: Should the below be info? And should we always show it or only when there's an error in
+		// checking Docker Engine version?
+		log.Warn("Ensure Docker Engine is installed and accessible")
+		log.Fatalf("Error checking Docker Engine version: %v .", err)
+	}
+	log.Infof("docker CLI is available at path: %s", path)
+	log.Infof("E2E test Docker client's API version: %s", cli.ClientVersion())
+	log.Infof("Docker Engine's API version: %s", serverVersionInfo.APIVersion)
+	log.Infof("Docker Engine's version: %s", serverVersionInfo.Version)
 }
 
 func StopRunningContainer(containerName string) {
