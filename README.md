@@ -32,6 +32,8 @@ go test -v ./... -timeout 2h
 
 ## On Windows
 
+### Command prompt / batch (.bat) file
+
 ```bat
 :: clone the repo
 git clone https://github.com/karuppiah7890/tce-e2e-test
@@ -55,3 +57,7 @@ go clean -testcache
 :: and Golang does not end them abruptly
 go test -v ./... -timeout 2h
 ```
+
+### Powershell
+
+<!-- TODO: Write instructions for powershell -->
