@@ -1,23 +1,19 @@
 package e2e
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/aws"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
-	"k8s.io/client-go/util/homedir"
 )
 
 func TestAwsManagementAndWorkloadCluster(t *testing.T) {
@@ -74,13 +70,13 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster
-	runManagementCluster(managementClusterName)
+	runAwsManagementCluster(managementClusterName)
 
 	// TODO: check if management cluster is running by doing something similar to
 	// `tanzu management-cluster get | grep "${MANAGEMENT_CLUSTER_NAME}" | grep running`
 
 	// TODO: Handle errors
-	getManagementClusterKubeConfig(managementClusterName)
+	getAwsManagementClusterKubeConfig(managementClusterName)
 
 	kubeConfigPath, err := getKubeConfigPath()
 	if err != nil {
@@ -99,12 +95,12 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster and then cleanup workload cluster
 	// and cleanup management cluster and then cleanup workload cluster
-	runWorkloadCluster(workloadClusterName)
+	runAwsWorkloadCluster(workloadClusterName)
 
 	checkWorkloadClusterIsRunning(workloadClusterName)
 
 	// TODO: Handle errors
-	getWorkloadClusterKubeConfig(workloadClusterName)
+	getAwsWorkloadClusterKubeConfig(workloadClusterName)
 
 	workloadClusterKubeContext := getKubeContextForTanzuCluster(workloadClusterName)
 
@@ -122,7 +118,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster and then cleanup workload cluster
-	deleteWorkloadCluster(workloadClusterName)
+	deleteAwsWorkloadCluster(workloadClusterName)
 
 	// TODO: Handle errors during waiting for cluster deletion.
 	// We could retry in some cases, to just list the workload clusters.
@@ -134,26 +130,13 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
-	deleteManagementCluster(managementClusterName)
+	deleteAwsManagementCluster(managementClusterName)
 }
 
-func getKubeConfigPath() (string, error) {
-	home := homedir.HomeDir()
-
-	if home == "" {
-		return "", fmt.Errorf("could not find home directory to get absolute path of kubeconfig")
-	}
-
-	return filepath.Join(home, ".kube", "config"), nil
-}
-
-func getKubeContextForTanzuCluster(clusterName string) string {
-	return fmt.Sprintf("%s-admin@%s", clusterName, clusterName)
-}
-
-func runManagementCluster(managementClusterName string) {
+// TODO: Duplicate of runManagementCluster in azure_test.go , just config is different
+func runAwsManagementCluster(managementClusterName string) {
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(managementClusterName))
-	exitCode, err := cliRunner(Cmd{
+	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
 			"management-cluster",
@@ -180,9 +163,10 @@ func runManagementCluster(managementClusterName string) {
 	}
 }
 
-func getManagementClusterKubeConfig(managementClusterName string) {
+func getAwsManagementClusterKubeConfig(managementClusterName string) {
+	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(managementClusterName))
-	exitCode, err := cliRunner(Cmd{
+	exitCode, err := clirunner.Run(clirunner.Cmd{
 		// TODO: Replace magic strings like "tanzu", "management-cluster" etc
 		Name: "tanzu",
 		Args: []string{
@@ -212,9 +196,10 @@ func getManagementClusterKubeConfig(managementClusterName string) {
 	}
 }
 
-func deleteManagementCluster(managementClusterName string) {
+func deleteAwsManagementCluster(managementClusterName string) {
+	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(managementClusterName))
-	exitCode, err := cliRunner(Cmd{
+	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
 			"management-cluster",
@@ -242,9 +227,10 @@ func deleteManagementCluster(managementClusterName string) {
 	}
 }
 
-func runWorkloadCluster(workloadClusterName string) {
+func runAwsWorkloadCluster(workloadClusterName string) {
+	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
-	exitCode, err := cliRunner(Cmd{
+	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
 			"cluster",
@@ -271,38 +257,10 @@ func runWorkloadCluster(workloadClusterName string) {
 	}
 }
 
-func checkWorkloadClusterIsRunning(workloadClusterName string) {
-	// TODO: Should this function use a loop and wait (with timeout) for workload cluster to show up in the list
-	// of workload clusters and be in running state? Or will Tanzu exit workload cluster creation
-	// command only when workload cluster shows up in the list and is in running state? Gotta check
-	workloadClusters := listWorkloadClusters()
-
-	isClusterPresent := false
-	clusterStatus := ""
-
-	for _, workloadCluster := range workloadClusters {
-		if workloadCluster.Name == workloadClusterName {
-			isClusterPresent = true
-			clusterStatus = workloadCluster.Status
-		}
-	}
-
-	if !isClusterPresent {
-		// Return errors for caller to handle maybe? Instead of abrupt stop?
-		log.Fatalf("Workload cluster %s is not present in the list of workload clusters", workloadClusterName)
-	}
-
-	if clusterStatus != "running" {
-		// Return errors for caller to handle maybe? Instead of abrupt stop?
-		log.Fatalf("Workload cluster %s is not in running status, it is in %s status", workloadClusterName, clusterStatus)
-	}
-
-	log.Infof("Workload cluster %s is running successfully\n", workloadClusterName)
-}
-
-func getWorkloadClusterKubeConfig(workloadClusterName string) {
+func getAwsWorkloadClusterKubeConfig(workloadClusterName string) {
+	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
-	exitCode, err := cliRunner(Cmd{
+	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
 			"cluster",
@@ -331,9 +289,10 @@ func getWorkloadClusterKubeConfig(workloadClusterName string) {
 	}
 }
 
-func deleteWorkloadCluster(workloadClusterName string) {
+func deleteAwsWorkloadCluster(workloadClusterName string) {
+	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
-	exitCode, err := cliRunner(Cmd{
+	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
 			"cluster",
@@ -361,163 +320,10 @@ func deleteWorkloadCluster(workloadClusterName string) {
 	}
 }
 
-type WorkloadCluster struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
-}
-
-type WorkloadClusters []WorkloadCluster
-
-func waitForWorkloadClusterDeletion(workloadClusterName string) {
-	// TODO: Use timer for timeout and ticker for polling every few seconds
-	// instead of using sleep
-	for i := 0; i < 60; i++ {
-		workloadClusters := listWorkloadClusters()
-
-		isClusterPresent := false
-
-		for _, workloadCluster := range workloadClusters {
-			if workloadCluster.Name == workloadClusterName {
-				isClusterPresent = true
-			}
-		}
-
-		if isClusterPresent {
-			log.Info("Waiting for workload cluster to get deleted")
-		} else {
-			log.Infof("Workload cluster %s successfully deleted\n", workloadClusterName)
-			return
-		}
-
-		time.Sleep(10 * time.Second)
-	}
-
-	// TODO: maybe return error instead of fatal stop?
-	log.Fatalf("Timed out waiting for workload cluster %s to get deleted", workloadClusterName)
-}
-
-func listWorkloadClusters() WorkloadClusters {
-	var workloadClusters WorkloadClusters
-
-	var clusterListOutput bytes.Buffer
-
-	exitCode, err := cliRunner(Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"cluster",
-			"list",
-			"-o",
-			"json",
-		},
-		Env:    os.Environ(),
-		Stdout: &clusterListOutput,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		// TODO: Do we really want to output to log.ErrorWriter ? Is this
-		// data necessary in the logs? This function will be called
-		// a lot of times. The data in log can help development and also
-		// during actual runs to check if there are any errors from the command, hmm
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		// TODO: return error instead of fatal? So that the caller can retry if they want to or stop execution
-		log.Fatalf("Error occurred while listing workload clusters. Exit code: %v. Error: %v", exitCode, err)
-	}
-
-	// TODO: Parse JSON output from the command.
-	// Check if the workload cluster name exists in the list of workload clusters.
-	// Ideally, there should only be one or zero workload clusters. But let's not
-	// think too much on that, for example, someone could create a separate workload
-	// cluster in the meantime while the first one was being created and verified.
-	// This could be done manually from their local machine to test stuff etc
-
-	json.NewDecoder(&clusterListOutput).Decode(&workloadClusters)
-
-	return workloadClusters
-}
-
-func checkTanzuCLIInstallation() {
-	log.Info("Checking tanzu CLI installation")
-	path, err := exec.LookPath("tanzu")
-	if err != nil {
-		log.Fatalf("tanzu CLI is not installed")
-	}
-	log.Infof("tanzu CLI is available at path: %s\n", path)
-}
-
-func checkTanzuManagementClusterCLIPluginInstallation() {
-	log.Info("Checking tanzu management cluster plugin CLI installation")
-
-	// TODO: Check for errors and return error?
-	// TODO: Parse version and show warning if version is newer than what's tested by the devs while writing test
-	// Refer - https://github.com/karuppiah7890/tce-e2e-test/issues/1#issuecomment-1094172278
-	exitCode, err := cliRunner(Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"management-cluster",
-			"version",
-		},
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		log.Fatalf("Error occurred while checking management cluster CLI plugin installation. Exit code: %v. Error: %v", exitCode, err)
-	}
-}
-
-func checkTanzuWorkloadClusterCLIPluginInstallation() {
-	log.Info("Checking tanzu workload cluster plugin CLI installation")
-
-	// TODO: Check for errors and return error?
-	// TODO: Parse version and show warning if version is newer than what's tested by the devs while writing test
-	// Refer - https://github.com/karuppiah7890/tce-e2e-test/issues/1#issuecomment-1094172278
-	exitCode, err := cliRunner(Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"cluster",
-			"version",
-		},
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		log.Fatalf("Error occurred while checking workload cluster CLI plugin installation. Exit code: %v. Error: %v", exitCode, err)
-	}
-}
-
 func checkDockerCLIInstallation() {
 	docker.CheckDockerInstallation()
 	docker.StopRunningContainer("test-worker")
 	//docker.StopAllRunningContainer()
-}
-
-func checkKubectlCLIInstallation() {
-	log.Info("Checking kubectl CLI installation")
-
-	path, err := exec.LookPath("kubectl")
-	if err != nil {
-		log.Fatalf("kubectl CLI is not installed")
-	}
-	log.Infof("kubectl CLI is available at path: %s\n", path)
 }
 
 type Cmd struct {
@@ -603,10 +409,6 @@ func cliRunner(command Cmd) (int, error) {
 	return cmd.ProcessState.ExitCode(), nil
 }
 
-type TanzuConfig map[string]string
-
-type EnvVars []string
-
 func tanzuAwsConfig(clusterName string) TanzuConfig {
 	// TODO: Ideas:
 	// We could also represent this config in a test data yaml file,
@@ -652,58 +454,4 @@ func tanzuAwsConfig(clusterName string) TanzuConfig {
 		"BASTION_HOST_ENABLED":       "true",
 		"IDENTITY_MANAGEMENT_TYPE":   "none",
 	}
-}
-
-func tanzuConfigToEnvVars(tanzuConfig TanzuConfig) EnvVars {
-	envVars := make(EnvVars, 0, len(tanzuConfig))
-
-	for key, value := range tanzuConfig {
-		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
-	}
-
-	return envVars
-}
-
-// TODO: Should this return cluster information or just print / log them?
-func printClusterInformation(kubeConfigPath string, kubeContext string) error {
-	client, err := kubeclient.GetKubeClient(kubeConfigPath, kubeContext)
-	if err != nil {
-		return fmt.Errorf("error getting kube client: %v", err)
-	}
-
-	versionInfo, err := client.Discovery().ServerVersion()
-	if err != nil {
-		return fmt.Errorf("error getting kubernetes api server version: %v", err)
-	}
-
-	log.Infof("Kubernetes API server version is %s", versionInfo.String())
-
-	// TODO: Should we get exact details as `kubectl get pod -A`? Showing age, restart count, how many containers are ready,
-	// pod's phase (running) etc
-
-	pods, err := client.GetAllPodsFromAllNamespaces()
-	if err != nil {
-		return fmt.Errorf("error getting all pods from all namespaces: %v", err)
-	}
-
-	// TODO: Should we check pods.RemainingItemCount value to see if it is 0 to ensure we have got all the pods?
-
-	log.Info("Pod Name\tPod Namespace\tPod Phase")
-	for _, pod := range pods.Items {
-		// TODO: Use some library to print / format in some sort of table format? With proper spacing
-		log.Infof("%s\t%s\t%s", pod.Name, pod.Namespace, pod.Status.Phase)
-	}
-
-	nodes, err := client.GetAllNodes()
-	if err != nil {
-		return fmt.Errorf("error getting all nodes: %v", err)
-	}
-
-	log.Info("\n\nNode Name\tNode Phase")
-	for _, node := range nodes.Items {
-		// TODO: There is some issue here, node.Status.Phase gives empty string I think
-		log.Infof("%s\t%s", node.Name, node.Status.Phase)
-	}
-
-	return nil
 }

@@ -402,6 +402,7 @@ func runManagementCluster(managementClusterName string) {
 }
 
 func getManagementClusterKubeConfig(managementClusterName string) {
+	// TODO: Do we really need the Azure secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(managementClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		// TODO: Replace magic strings like "tanzu", "management-cluster" etc
@@ -434,6 +435,7 @@ func getManagementClusterKubeConfig(managementClusterName string) {
 }
 
 func deleteManagementCluster(managementClusterName string) {
+	// TODO: Do we really need the Azure secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(managementClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
@@ -526,6 +528,7 @@ func getAzureMarketplaceImageInfoForWorkloadCluster(workloadClusterName string) 
 }
 
 func runWorkloadCluster(workloadClusterName string) {
+	// TODO: Do we really need the Azure secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(workloadClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
@@ -584,6 +587,7 @@ func checkWorkloadClusterIsRunning(workloadClusterName string) {
 }
 
 func getWorkloadClusterKubeConfig(workloadClusterName string) {
+	// TODO: Do we really need the Azure secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(workloadClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
