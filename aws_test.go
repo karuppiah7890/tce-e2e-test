@@ -320,12 +320,6 @@ func deleteAwsWorkloadCluster(workloadClusterName string) {
 	}
 }
 
-func checkDockerCLIInstallation() {
-	docker.CheckDockerInstallation()
-	docker.StopRunningContainer("test-worker")
-	//docker.StopAllRunningContainer()
-}
-
 type Cmd struct {
 	// Name is the Name of the command to run.
 	//
