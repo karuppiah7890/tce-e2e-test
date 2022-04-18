@@ -33,6 +33,11 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/marketplaceordering/armmarketplaceordering"
 )
 
+// TODO: Make region as environment variable
+
+// TODO: Consider making all as environment variables. Hard coded values in test code can be default
+// We can pass env vars to override stuff
+
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("azure-mgmt-wkld-e2e")
 
@@ -161,6 +166,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	deleteManagementCluster(managementClusterName)
 }
 
+// TODO: Move this to common util
 func getKubeConfigPath() (string, error) {
 	home := homedir.HomeDir()
 
@@ -171,10 +177,12 @@ func getKubeConfigPath() (string, error) {
 	return filepath.Join(home, ".kube", "config"), nil
 }
 
+// TODO: Move this to a tanzu specific util
 func getKubeContextForTanzuCluster(clusterName string) string {
 	return fmt.Sprintf("%s-admin@%s", clusterName, clusterName)
 }
 
+// TODO: Move this to a azure specific util
 // TODO: Should we just use one function acceptAzureImageLicenses with the whole implementation? There will be a for loop with a big body though
 func acceptAzureImageLicenses(subscriptionID string, cred *azidentity.ClientSecretCredential, azureMarketplaceImages ...*capzv1beta1.AzureMarketplaceImage) {
 	for _, azureMarketplaceImage := range azureMarketplaceImages {
@@ -182,6 +190,7 @@ func acceptAzureImageLicenses(subscriptionID string, cred *azidentity.ClientSecr
 	}
 }
 
+// TODO: Move this to a azure specific util
 // This naming is for clarity until we move the function to some azure specific
 // package then we can remove the reference to azure from it and rename
 // it back to acceptImageLicense
@@ -557,6 +566,7 @@ func runWorkloadCluster(workloadClusterName string) {
 	}
 }
 
+// TODO: Move this to a common util
 func checkWorkloadClusterIsRunning(workloadClusterName string) {
 	// TODO: Should this function use a loop and wait (with timeout) for workload cluster to show up in the list
 	// of workload clusters and be in running state? Or will Tanzu exit workload cluster creation
@@ -648,13 +658,16 @@ func deleteWorkloadCluster(workloadClusterName string) {
 	}
 }
 
+// TODO: Move this to a common util
 type WorkloadCluster struct {
 	Name   string `json:"name"`
 	Status string `json:"status"`
 }
 
+// TODO: Move this to a common util
 type WorkloadClusters []WorkloadCluster
 
+// TODO: Move this to a tanzu specific util
 func waitForWorkloadClusterDeletion(workloadClusterName string) {
 	// TODO: Use timer for timeout and ticker for polling every few seconds
 	// instead of using sleep
@@ -683,6 +696,7 @@ func waitForWorkloadClusterDeletion(workloadClusterName string) {
 	log.Fatalf("Timed out waiting for workload cluster %s to get deleted", workloadClusterName)
 }
 
+// TODO: Move this to a tanzu specific util
 func listWorkloadClusters() WorkloadClusters {
 	var workloadClusters WorkloadClusters
 
@@ -728,6 +742,7 @@ func listWorkloadClusters() WorkloadClusters {
 	return workloadClusters
 }
 
+// TODO: Move this to a common util
 func checkTanzuCLIInstallation() {
 	log.Info("Checking tanzu CLI installation")
 	path, err := exec.LookPath("tanzu")
@@ -737,6 +752,7 @@ func checkTanzuCLIInstallation() {
 	log.Infof("tanzu CLI is available at path: %s\n", path)
 }
 
+// TODO: Move this to a common util
 func checkTanzuManagementClusterCLIPluginInstallation() {
 	log.Info("Checking tanzu management cluster plugin CLI installation")
 
@@ -764,6 +780,7 @@ func checkTanzuManagementClusterCLIPluginInstallation() {
 	}
 }
 
+// TODO: Move this to a common util
 func checkTanzuWorkloadClusterCLIPluginInstallation() {
 	log.Info("Checking tanzu workload cluster plugin CLI installation")
 
@@ -791,6 +808,7 @@ func checkTanzuWorkloadClusterCLIPluginInstallation() {
 	}
 }
 
+// TODO: Move this to a common util
 func checkKubectlCLIInstallation() {
 	log.Info("Checking kubectl CLI installation")
 
@@ -818,10 +836,13 @@ func checkKubectlCLIInstallation() {
 
 // TODO: Maybe create a wrapper function called Tanzu() around clirunner.Run?
 
+// TODO: Move this to a tanzu specific lib
 type TanzuConfig map[string]string
 
+// TODO: Move this to a common util / tanzu specific lib
 type EnvVars []string
 
+// TODO: Move this to a tanzu specific lib
 func tanzuAzureConfig(clusterName string) TanzuConfig {
 	// TODO: Ideas:
 	// We could also represent this config in a test data yaml file,
@@ -869,6 +890,7 @@ func tanzuAzureConfig(clusterName string) TanzuConfig {
 	}
 }
 
+// TODO: Move this to a tanzu specific lib
 func tanzuConfigToEnvVars(tanzuConfig TanzuConfig) EnvVars {
 	envVars := make(EnvVars, 0, len(tanzuConfig))
 
@@ -879,6 +901,7 @@ func tanzuConfigToEnvVars(tanzuConfig TanzuConfig) EnvVars {
 	return envVars
 }
 
+// TODO: Move this to a common lib
 // TODO: Should this return cluster information or just print / log them?
 func printClusterInformation(kubeConfigPath string, kubeContext string) error {
 	client, err := kubeclient.GetKubeClient(kubeConfigPath, kubeContext)

@@ -14,6 +14,15 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 )
 
+// TODO: Remove references of Azure from comments
+
+// TODO: Add tanzu command `tanzu management-cluster permissions aws set` to create AWS Cloud Formation Stack
+
+// TODO: Make region as environment variable
+
+// TODO: Consider making all as environment variables. Hard coded values in test code can be default.
+// We can pass env vars to override stuff
+
 func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("aws-mgmt-wkld-e2e")
 
@@ -161,6 +170,7 @@ func runAwsManagementCluster(managementClusterName string) {
 	}
 }
 
+// TODO: Duplicate of getManagementClusterKubeConfig in azure_test.go , just config is different
 func getAwsManagementClusterKubeConfig(managementClusterName string) {
 	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(managementClusterName))
@@ -194,6 +204,7 @@ func getAwsManagementClusterKubeConfig(managementClusterName string) {
 	}
 }
 
+// TODO: Duplicate of deleteManagementCluster in azure_test.go , just config is different
 func deleteAwsManagementCluster(managementClusterName string) {
 	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(managementClusterName))
@@ -225,6 +236,7 @@ func deleteAwsManagementCluster(managementClusterName string) {
 	}
 }
 
+// TODO: Duplicate of runWorkloadCluster in azure_test.go , just config is different
 func runAwsWorkloadCluster(workloadClusterName string) {
 	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
@@ -255,6 +267,7 @@ func runAwsWorkloadCluster(workloadClusterName string) {
 	}
 }
 
+// TODO: Duplicate of getWorkloadClusterKubeConfig in azure_test.go , just config is different
 func getAwsWorkloadClusterKubeConfig(workloadClusterName string) {
 	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
@@ -287,6 +300,7 @@ func getAwsWorkloadClusterKubeConfig(workloadClusterName string) {
 	}
 }
 
+// TODO: Duplicate of deleteWorkloadCluster in azure_test.go , just config is different
 func deleteAwsWorkloadCluster(workloadClusterName string) {
 	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
