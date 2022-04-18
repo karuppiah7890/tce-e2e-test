@@ -869,6 +869,13 @@ func tanzuAzureConfig(clusterName string) TanzuConfig {
 	// 13. ENABLE_CEIP_PARTICIPATION - true or false
 	// 14. ENABLE_MHC - true or false. In one issue, someone had to set this to false or else their cluster creation was failing
 	// 15. IDENTITY_MANAGEMENT_TYPE - none or some particular set of identity management types
+
+	// TODO: In our bash E2E test, we control the value of the below env vars using the cluster name along with some suffix
+	// AZURE_RESOURCE_GROUP
+	// AZURE_VNET_RESOURCE_GROUP
+	// AZURE_VNET_NAME
+	// AZURE_CONTROL_PLANE_SUBNET_NAME
+	// AZURE_NODE_SUBNET_NAME
 	return TanzuConfig{
 		"CLUSTER_NAME":                     clusterName,
 		"INFRASTRUCTURE_PROVIDER":          "azure",
