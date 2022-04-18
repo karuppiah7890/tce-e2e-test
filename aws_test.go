@@ -2,9 +2,7 @@ package e2e
 
 import (
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
 	"runtime"
 	"testing"
 	"time"
@@ -320,46 +318,6 @@ func deleteAwsWorkloadCluster(workloadClusterName string) {
 	}
 }
 
-type Cmd struct {
-	// Name is the Name of the command to run.
-	//
-	// This is the only field that must be set to a non-zero
-	// value.
-	Name string
-
-	// Args holds command line arguments, including the command as Args[0].
-	// If the Args field is empty or nil, Run uses {Name}.
-	Args []string
-
-	// Env specifies the environment of the process.
-	// Each entry is of the form "key=value".
-	// If Env is nil, the new process uses the current process's
-	// environment.
-	// If Env contains duplicate environment keys, only the last
-	// value in the slice for each duplicate key is used.
-	// As a special case on Windows, SYSTEMROOT is always added if
-	// missing and not explicitly set to the empty string.
-	Env []string
-
-	// Stdout and Stderr specify the process's standard output and error.
-	//
-	// If either is nil, Run connects the corresponding file descriptor
-	// to the null device (os.DevNull).
-	//
-	// If either is an *os.File, the corresponding output from the process
-	// is connected directly to that file.
-	//
-	// Otherwise, during the execution of the command a separate goroutine
-	// reads from the process over a pipe and delivers that data to the
-	// corresponding Writer. In this case, Wait does not complete until the
-	// goroutine reaches EOF or encounters an error.
-	//
-	// If Stdout and Stderr are the same writer, and have a type that can
-	// be compared with ==, at most one goroutine at a time will call Write.
-	Stdout io.Writer
-	Stderr io.Writer
-}
-
 // TODO: Consider using Tanzu golang client library instead of running tanzu as a CLI.
 // We could invoke plugins using their names and have tight integration. It comes with it's
 // own pros and cons. Pro - tight and smooth integration with Tanzu Framework.
@@ -375,33 +333,7 @@ type Cmd struct {
 // libraries and similar concept, we currently instead have tanzu CLI tool which is dynamically invoked and linked
 // to this test program
 
-// TODO: Maybe create a wrapper function called Tanzu() around cliRunner?
-func cliRunner(command Cmd) (int, error) {
-	cmd := exec.Command(command.Name, command.Args...)
-	cmd.Stdout = command.Stdout
-	cmd.Stderr = command.Stderr
-	cmd.Env = command.Env
-
-	// TODO: Maybe set cmd.Env explicitly to a narrow set of env vars to just inject the secrets
-	// that we want to inject and nothing else. But system level env vars maybe needed for the CLI.
-	// Think about how to inject the env vars. Use single struct as function argument?
-	// Use a struct to store the data including env vars and use that as data/context in
-	// it's methods where method runs the command by injecting the env vars
-	// Or something like
-	// Tanzu({ env: []string{"key=value", "key2=value2"}, command: "management-cluster version" })
-	// But the above is not exactly readable, hmm
-
-	log.Infof("Running the command `%v`", cmd.String())
-
-	err := cmd.Run()
-	if err != nil {
-		// TODO: Handle the error by returning it?
-		log.Infof("Error occurred while running the command `%v`: %v", cmd.String(), err)
-		return cmd.ProcessState.ExitCode(), err
-	}
-
-	return cmd.ProcessState.ExitCode(), nil
-}
+// TODO: Maybe create a wrapper function called Tanzu() around clirunner.Run()?
 
 func tanzuAwsConfig(clusterName string) TanzuConfig {
 	// TODO: Ideas:
