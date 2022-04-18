@@ -23,7 +23,8 @@ func InitLogger(loggingProgram string) {
 	core := zapcore.NewCore(encoder, writerSync, zapcore.DebugLevel)
 	// TODO: The caller is always log/log.go and it's not useful as we don't know which function in the stack called it.
 	// Can we stack information etc? Or we will remove it for now
-	globalLogger := zap.New(core, zap.AddCaller())
+	// Added AddCallerSkip to log stack for above todo
+	globalLogger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
 	zap.ReplaceGlobals(globalLogger)
 }

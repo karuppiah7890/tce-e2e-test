@@ -12,15 +12,26 @@ import (
 // TODO: Let's provide a Docker Client struct with `NewDockerClient` or `GetDockerClient`
 // and struct methods on it so that we don't have to create a new client every time using
 // client.NewClientWithOpts()
+var ctx context.Context = context.Background()
 
-func CheckDockerInstallation() {
-
-	log.Info("Checking docker CLI and Docker Engine installation")
+func GetDockerClient() *client.Client {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		// TODO: Handle errors by returning them? Should we log them here too or let caller decide about the logging?
 		log.Fatalf("error creating docker client: %v", err)
 	}
+	return cli
+}
+
+func CheckDockerInstallation() {
+
+	log.Info("Checking docker CLI and Docker Engine installation")
+	//cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	//if err != nil {
+	//	// TODO: Handle errors by returning them? Should we log them here too or let caller decide about the logging?
+	//	log.Fatalf("error creating docker client: %v", err)
+	//}
+	cli := GetDockerClient()
 	path, err := exec.LookPath("docker")
 	if err != nil {
 		// TODO: Handle errors by returning them? Should we log them here too or let caller decide about the logging?
@@ -41,8 +52,7 @@ func CheckDockerInstallation() {
 }
 
 func StopRunningContainer(containerName string) {
-	ctx := context.Background()
-	cli, _ := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli := GetDockerClient()
 
 	// TODO: Handle errors by returning them? Should we log them here too or let caller decide about the logging?
 	if err := cli.ContainerRemove(ctx, containerName, types.ContainerRemoveOptions{Force: true}); err != nil {
@@ -52,11 +62,10 @@ func StopRunningContainer(containerName string) {
 
 }
 func StopAllRunningContainer() {
-	ctx := context.Background()
-	cli, _ := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli := GetDockerClient()
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
-		panic(err)
+		log.Infof("Failed to List Containers: %s", err)
 	}
 	log.Infof("Containers %s", containers)
 	for _, container := range containers {
