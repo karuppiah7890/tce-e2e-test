@@ -13,6 +13,7 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/extract"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/search"
 )
 
 const SHELL = "sh"
@@ -34,24 +35,13 @@ func getTceArtifactUrl(version string) (string, error) {
 	architecture := runtime.GOARCH
 	operatingSystem := runtime.GOOS
 	platform := fmt.Sprintf("%s/%s", operatingSystem, architecture)
-	if !isPresentIn(platform, supportedPlatforms) {
+	if !search.IsPresentIn(platform, supportedPlatforms) {
 		return "", fmt.Errorf("platform %s is not supported by TCE. Supported platforms: %v", platform, supportedPlatforms)
 	}
 
 	artifactExtension := artifactExtensions[operatingSystem]
 	// Example: https://github.com/vmware-tanzu/community-edition/releases/download/v0.11.0/tce-darwin-amd64-v0.11.0.tar.gz
 	return fmt.Sprintf("https://github.com/vmware-tanzu/community-edition/releases/download/v%s/tce-%s-%s-v%s.%s", version, operatingSystem, architecture, version, artifactExtension), nil
-}
-
-// searches if needle is present in haystack
-func isPresentIn(needle string, haystack []string) bool {
-	for _, thing := range haystack {
-		if thing == needle {
-			return true
-		}
-	}
-
-	return false
 }
 
 // TODO: Should we support Install("v0.11.0") too? Or just have one of them? Which one?
@@ -82,6 +72,9 @@ func Install(version string) error {
 	targetDirectory := getTargetDirectory()
 	// extract tar ball or zip based on previous step
 	extract.Extract(artifactName, targetDirectory)
+
+	// TODO: For windows, after the install.bat script is called, we need to add %PROGRAMFILES%\tanzu to the System PATH
+	// so that `tanzu` CLI command can be used
 
 	return invokeTceInstallScript(targetDirectory)
 }
