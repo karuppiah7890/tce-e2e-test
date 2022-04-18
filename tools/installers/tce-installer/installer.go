@@ -22,6 +22,9 @@ import (
 // 8. Install from given daily official build date - the build date can be latest or not. Detect current OS and architecture and pull the
 // appropriate artifact and install TCE
 
+// TODO: Support doing uninstall to cleanup any existing installation first and then do fresh install, given a flag
+// like `--uninstall` or similar
+
 func main() {
 	log.InitLogger("tce-install")
 	// TODO: Get version from flags (--version) or arguments

@@ -18,6 +18,9 @@ import (
 // 7. Install from given TF version - which can be stable (latest or not), prerelease(latest or not). Detect current OS and architecture and pull the
 // appropriate artifact and install TF
 
+// TODO: Support doing uninstall to cleanup any existing installation first and then do fresh install, given a flag
+// like `--uninstall` or similar
+
 func main() {
 	log.InitLogger("tf-install")
 	// TODO: Get version from flags (--version) or arguments
