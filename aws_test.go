@@ -148,7 +148,17 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
-	deleteAwsManagementCluster(managementClusterName)
+	err = deleteAwsManagementCluster(managementClusterName)
+	if err != nil {
+		log.Errorf("error while deleting management cluster: %v", err)
+
+		err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
+		if err != nil {
+			log.Errorf("error while collecting diagnostics of management cluster: %v", err)
+		}
+
+		log.Fatal("error while deleting management cluster: %v", err)
+	}
 }
 
 // TODO: Duplicate of runManagementCluster in azure_test.go , just config is different
@@ -218,7 +228,7 @@ func getAwsManagementClusterKubeConfig(managementClusterName string) {
 }
 
 // TODO: Duplicate of deleteManagementCluster in azure_test.go , just config is different
-func deleteAwsManagementCluster(managementClusterName string) {
+func deleteAwsManagementCluster(managementClusterName string) error {
 	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(managementClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
@@ -245,8 +255,10 @@ func deleteAwsManagementCluster(managementClusterName string) {
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deleting management cluster. Exit code: %v. Error: %v", exitCode, err)
+		return fmt.Errorf("error occurred while deleting management cluster. exit code: %v. error: %v", exitCode, err)
 	}
+
+	return nil
 }
 
 // TODO: Duplicate of runWorkloadCluster in azure_test.go , just config is different

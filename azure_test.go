@@ -174,7 +174,17 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
-	deleteManagementCluster(managementClusterName)
+	err = deleteManagementCluster(managementClusterName)
+	if err != nil {
+		log.Errorf("error while deleting management cluster: %v", err)
+
+		err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
+		if err != nil {
+			log.Errorf("error while collecting diagnostics of management cluster: %v", err)
+		}
+
+		log.Fatal("error while deleting management cluster: %v", err)
+	}
 }
 
 // TODO: Move this to common util
@@ -456,7 +466,7 @@ func getManagementClusterKubeConfig(managementClusterName string) {
 	}
 }
 
-func deleteManagementCluster(managementClusterName string) {
+func deleteManagementCluster(managementClusterName string) error {
 	// TODO: Do we really need the Azure secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(managementClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
@@ -483,8 +493,10 @@ func deleteManagementCluster(managementClusterName string) {
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deleting management cluster. Exit code: %v. Error: %v", exitCode, err)
+		return fmt.Errorf("error occurred while deleting management cluster. exit code: %v. error: %v", exitCode, err)
 	}
+
+	return nil
 }
 
 func getAzureMarketplaceImageInfoForWorkloadCluster(workloadClusterName string) []*capzv1beta1.AzureMarketplaceImage {
