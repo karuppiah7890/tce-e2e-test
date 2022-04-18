@@ -12,6 +12,10 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// TODO: Check what happens when multiple tests run in parallel and call this.
+// Does it support multiple parallel tests logging to different files? Or is there any problems
+// due to the usage of global loggers and zap.ReplaceGlobals 😅 in which case we have to resort to
+// using local loggers along with passing around loggers for usage in functions / methods etc
 func InitLogger(loggingProgram string) {
 	logDir := createDirectoryIfNotExists()
 	writerSync := getLogWriter(logDir, loggingProgram)
