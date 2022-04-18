@@ -24,6 +24,7 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubescheme"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 
 	kubeRuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/homedir"
@@ -99,7 +100,17 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster
-	runManagementCluster(managementClusterName)
+	err := runManagementCluster(managementClusterName)
+	if err != nil {
+		log.Errorf("error while running management cluster: %v", err)
+
+		err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
+		if err != nil {
+			log.Errorf("error while collecting diagnostics of management cluster: %v", err)
+		}
+
+		log.Fatal("error while running management cluster: %v", err)
+	}
 
 	// TODO: check if management cluster is running by doing something similar to
 	// `tanzu management-cluster get | grep "${MANAGEMENT_CLUSTER_NAME}" | grep running`
@@ -381,7 +392,7 @@ func SplitYAML(resources []byte) ([][]byte, error) {
 	return res, nil
 }
 
-func runManagementCluster(managementClusterName string) {
+func runManagementCluster(managementClusterName string) error {
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(managementClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
@@ -406,8 +417,10 @@ func runManagementCluster(managementClusterName string) {
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deploying management cluster. Exit code: %v. Error: %v", exitCode, err)
+		return fmt.Errorf("error occurred while deploying management cluster. exit code: %v. error: %v", exitCode, err)
 	}
+
+	return nil
 }
 
 func getManagementClusterKubeConfig(managementClusterName string) {
