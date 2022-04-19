@@ -26,11 +26,6 @@ func GetDockerClient() *client.Client {
 func CheckDockerInstallation() {
 
 	log.Info("Checking docker CLI and Docker Engine installation")
-	//cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	//if err != nil {
-	//	// TODO: Handle errors by returning them? Should we log them here too or let caller decide about the logging?
-	//	log.Fatalf("error creating docker client: %v", err)
-	//}
 	cli := GetDockerClient()
 	path, err := exec.LookPath("docker")
 	if err != nil {
@@ -65,7 +60,7 @@ func StopRunningContainer(containerName string) {
 }
 
 // TODO: rename this to RemoveAllRunningContainers ? Or StopAndRemoveAllRunningContainers? or ForceRemoveAllRunningContainers?
-func StopAllRunningContainer() {
+func ForceRemoveAllRunningContainers() {
 	cli := GetDockerClient()
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
