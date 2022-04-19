@@ -139,7 +139,18 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster and then cleanup workload cluster
-	runWorkloadCluster(workloadClusterName)
+	err = runWorkloadCluster(workloadClusterName)
+	if err != nil {
+		log.Errorf("error while running workload cluster: %v", err)
+
+		// TODO: Convert magic strings like "azure" to constants
+		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, "azure")
+		if err != nil {
+			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
+		}
+
+		log.Fatal("error while running workload cluster: %v", err)
+	}
 
 	checkWorkloadClusterIsRunning(workloadClusterName)
 
@@ -162,7 +173,18 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster and then cleanup workload cluster
-	deleteWorkloadCluster(workloadClusterName)
+	err = deleteWorkloadCluster(workloadClusterName)
+	if err != nil {
+		log.Errorf("error while deleting workload cluster: %v", err)
+
+		// TODO: Convert magic strings like "azure" to constants
+		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, "azure")
+		if err != nil {
+			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
+		}
+
+		log.Fatal("error while deleting workload cluster: %v", err)
+	}
 
 	// TODO: Handle errors during waiting for cluster deletion.
 	// We could retry in some cases, to just list the workload clusters.
@@ -561,7 +583,7 @@ func getAzureMarketplaceImageInfoForWorkloadCluster(workloadClusterName string) 
 	return marketplaces
 }
 
-func runWorkloadCluster(workloadClusterName string) {
+func runWorkloadCluster(workloadClusterName string) error {
 	// TODO: Do we really need the Azure secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(workloadClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
@@ -587,8 +609,10 @@ func runWorkloadCluster(workloadClusterName string) {
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deploying workload cluster. Exit code: %v. Error: %v", exitCode, err)
+		return fmt.Errorf("error occurred while deploying workload cluster. exit code: %v. error: %v", exitCode, err)
 	}
+
+	return nil
 }
 
 // TODO: Move this to a common util
@@ -653,7 +677,7 @@ func getWorkloadClusterKubeConfig(workloadClusterName string) {
 	}
 }
 
-func deleteWorkloadCluster(workloadClusterName string) {
+func deleteWorkloadCluster(workloadClusterName string) error {
 	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(workloadClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
@@ -679,8 +703,10 @@ func deleteWorkloadCluster(workloadClusterName string) {
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deleting workload cluster. Exit code: %v. Error: %v", exitCode, err)
+		return fmt.Errorf("error occurred while deleting workload cluster. exit code: %v. error: %v", exitCode, err)
 	}
+
+	return nil
 }
 
 // TODO: Move this to a common util

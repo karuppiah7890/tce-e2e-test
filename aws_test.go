@@ -113,7 +113,18 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster and then cleanup workload cluster
 	// and cleanup management cluster and then cleanup workload cluster
-	runAwsWorkloadCluster(workloadClusterName)
+	err = runAwsWorkloadCluster(workloadClusterName)
+	if err != nil {
+		log.Errorf("error while running workload cluster: %v", err)
+
+		// TODO: Convert magic strings like "aws" to constants
+		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, "aws")
+		if err != nil {
+			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
+		}
+
+		log.Fatal("error while running workload cluster: %v", err)
+	}
 
 	checkWorkloadClusterIsRunning(workloadClusterName)
 
@@ -136,7 +147,18 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster and then cleanup workload cluster
-	deleteAwsWorkloadCluster(workloadClusterName)
+	err = deleteAwsWorkloadCluster(workloadClusterName)
+	if err != nil {
+		log.Errorf("error while deleting workload cluster: %v", err)
+
+		// TODO: Convert magic strings like "aws" to constants
+		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, "aws")
+		if err != nil {
+			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
+		}
+
+		log.Fatal("error while deleting workload cluster: %v", err)
+	}
 
 	// TODO: Handle errors during waiting for cluster deletion.
 	// We could retry in some cases, to just list the workload clusters.
@@ -262,7 +284,7 @@ func deleteAwsManagementCluster(managementClusterName string) error {
 }
 
 // TODO: Duplicate of runWorkloadCluster in azure_test.go , just config is different
-func runAwsWorkloadCluster(workloadClusterName string) {
+func runAwsWorkloadCluster(workloadClusterName string) error {
 	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
@@ -288,8 +310,10 @@ func runAwsWorkloadCluster(workloadClusterName string) {
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deploying workload cluster. Exit code: %v. Error: %v", exitCode, err)
+		return fmt.Errorf("error occurred while deploying workload cluster. exit code: %v. error: %v", exitCode, err)
 	}
+
+	return nil
 }
 
 // TODO: Duplicate of getWorkloadClusterKubeConfig in azure_test.go , just config is different
@@ -326,7 +350,7 @@ func getAwsWorkloadClusterKubeConfig(workloadClusterName string) {
 }
 
 // TODO: Duplicate of deleteWorkloadCluster in azure_test.go , just config is different
-func deleteAwsWorkloadCluster(workloadClusterName string) {
+func deleteAwsWorkloadCluster(workloadClusterName string) error {
 	// TODO: Do we really need the AWS secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
@@ -353,8 +377,10 @@ func deleteAwsWorkloadCluster(workloadClusterName string) {
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while deleting workload cluster. Exit code: %v. Error: %v", exitCode, err)
+		return fmt.Errorf("error occurred while deleting workload cluster. exit code: %v. error: %v", exitCode, err)
 	}
+
+	return nil
 }
 
 // TODO: Consider using Tanzu golang client library instead of running tanzu as a CLI.
