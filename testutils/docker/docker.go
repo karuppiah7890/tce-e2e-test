@@ -51,6 +51,8 @@ func CheckDockerInstallation() {
 	log.Infof("Docker Engine's version: %s", serverVersionInfo.Version)
 }
 
+// TODO: rename this to RemoveRunningContainer ? Or StopAndRemoveRunningContainer? or ForceRemoveRunningContainer?
+// containerName - name of the container / container ID (full ID or unique partial ID)
 func StopRunningContainer(containerName string) {
 	cli := GetDockerClient()
 
@@ -58,9 +60,11 @@ func StopRunningContainer(containerName string) {
 	if err := cli.ContainerRemove(ctx, containerName, types.ContainerRemoveOptions{Force: true}); err != nil {
 		log.Infof("Failed to find container with  name: %s", containerName)
 	}
-	log.Infof("Container stopped: %s", containerName)
+	log.Infof("Container removed: %s", containerName)
 
 }
+
+// TODO: rename this to RemoveAllRunningContainers ? Or StopAndRemoveAllRunningContainers? or ForceRemoveAllRunningContainers?
 func StopAllRunningContainer() {
 	cli := GetDockerClient()
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
@@ -73,6 +77,6 @@ func StopAllRunningContainer() {
 		if err := cli.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 			log.Infof("Failed to find container with  name: %s", container.Names)
 		}
-		log.Infof("Container stopped: %s", container.Names)
+		log.Infof("Container removed: %s", container.Names)
 	}
 }
