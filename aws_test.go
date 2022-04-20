@@ -2,31 +2,29 @@ package e2e
 
 import (
 	"fmt"
-	"os"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 	"runtime"
 	"testing"
 	"time"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/aws"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 )
 
-// TODO: Remove references of Azure from comments
-
-// TODO: Add tanzu command `tanzu management-cluster permissions aws set` to create AWS Cloud Formation Stack
-
 // TODO: Make region as environment variable
 
 // TODO: Consider making all as environment variables. Hard coded values in test code can be default.
 // We can pass env vars to override stuff
 
+// TODO: Do we really need individual test files for each provider or can we parameterise it ? thoughts
+
 func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("aws-mgmt-wkld-e2e")
-
+	provider := "aws"
 	// TODO: Think about installing TCE / TF from tar ball and from source
 	// make release based on OS? Windows has make? Hmm
 	// release-dir
@@ -36,19 +34,19 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 
 	// Ensure TCE/TF is installed - check TCE installation or install it if not present. Or do it prior to the test run.
 	// check if tanzu is installed
-	checkTanzuCLIInstallation()
+	utils.CheckTanzuCLIInstallation()
 
 	// Ensure management and workload cluster plugins are present.
 	// check if management cluster plugin is present
-	checkTanzuManagementClusterCLIPluginInstallation()
+	utils.CheckTanzuManagementClusterCLIPluginInstallation()
 
 	// check if workload cluster plugin is present
-	checkTanzuWorkloadClusterCLIPluginInstallation()
+	utils.CheckTanzuWorkloadClusterCLIPluginInstallation()
 
 	// check if docker is installed. This is required by tanzu CLI I think, both docker client CLI and docker daemon
 	docker.CheckDockerInstallation()
 	// check if kubectl is installed. This is required by tanzu CLI to apply using kubectl apply to create cluster
-	checkKubectlCLIInstallation()
+	utils.CheckKubectlCLIInstallation()
 
 	if runtime.GOOS == platforms.WINDOWS {
 		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guranteed to work!")
@@ -76,9 +74,11 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// the cluster or cluster resources using Tanzu to be able to do this instead of encoding the pipeline
 	// metadata in the cluster name but that's a good idea too :)
 
+	// To create Aws Cloud formation stack
+	createCloudFormationStack()
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster
-	err := runAwsManagementCluster(managementClusterName)
+	err := utils.RunManagementCluster(managementClusterName, provider)
 	if err != nil {
 		log.Errorf("error while running management cluster: %v", err)
 
@@ -94,17 +94,17 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// `tanzu management-cluster get | grep "${MANAGEMENT_CLUSTER_NAME}" | grep running`
 
 	// TODO: Handle errors
-	getAwsManagementClusterKubeConfig(managementClusterName)
+	utils.GetManagementClusterKubeConfig(managementClusterName, provider)
 
-	kubeConfigPath, err := getKubeConfigPath()
+	kubeConfigPath, err := utils.GetKubeConfigPath()
 	if err != nil {
 		// Should we panic here and stop?
 		log.Errorf("error while getting kubeconfig path: %v", err)
 	}
-	managementClusterKubeContext := getKubeContextForTanzuCluster(managementClusterName)
+	managementClusterKubeContext := utils.GetKubeContextForTanzuCluster(managementClusterName)
 
 	log.Infof("Management Cluster %s Information: ", managementClusterName)
-	err = printClusterInformation(kubeConfigPath, managementClusterKubeContext)
+	err = utils.PrintClusterInformation(kubeConfigPath, managementClusterKubeContext)
 	if err != nil {
 		// Should we panic here and stop?
 		log.Errorf("error while printing management cluster information: %v", err)
@@ -113,12 +113,12 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster and then cleanup workload cluster
 	// and cleanup management cluster and then cleanup workload cluster
-	err = runAwsWorkloadCluster(workloadClusterName)
+	err = utils.RunWorkloadCluster(workloadClusterName, provider)
 	if err != nil {
 		log.Errorf("error while running workload cluster: %v", err)
 
 		// TODO: Convert magic strings like "aws" to constants
-		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, "aws")
+		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider)
 		if err != nil {
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
 		}
@@ -126,15 +126,15 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 		log.Fatal("error while running workload cluster: %v", err)
 	}
 
-	checkWorkloadClusterIsRunning(workloadClusterName)
+	utils.CheckWorkloadClusterIsRunning(workloadClusterName)
 
 	// TODO: Handle errors
-	getAwsWorkloadClusterKubeConfig(workloadClusterName)
+	utils.GetWorkloadClusterKubeConfig(workloadClusterName, provider)
 
-	workloadClusterKubeContext := getKubeContextForTanzuCluster(workloadClusterName)
+	workloadClusterKubeContext := utils.GetKubeContextForTanzuCluster(workloadClusterName)
 
 	log.Infof("Workload Cluster %s Information: ", workloadClusterName)
-	err = printClusterInformation(kubeConfigPath, workloadClusterKubeContext)
+	err = utils.PrintClusterInformation(kubeConfigPath, workloadClusterKubeContext)
 	if err != nil {
 		// Should we panic here and stop?
 		log.Errorf("error while printing workload cluster information: %v", err)
@@ -147,7 +147,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster and then cleanup workload cluster
-	err = deleteAwsWorkloadCluster(workloadClusterName)
+	err = utils.DeleteWorkloadCluster(workloadClusterName, provider)
 	if err != nil {
 		log.Errorf("error while deleting workload cluster: %v", err)
 
@@ -163,14 +163,14 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: Handle errors during waiting for cluster deletion.
 	// We could retry in some cases, to just list the workload clusters.
 	// If all retries fail, cleanup management cluster and then cleanup workload cluster
-	waitForWorkloadClusterDeletion(workloadClusterName)
+	utils.WaitForWorkloadClusterDeletion(workloadClusterName)
 
 	// TODO: Cleanup workload cluster kube config data (cluster, user, context)
 	// since tanzu cluster delete does not delete workload cluster kubeconfig entry
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
-	err = deleteAwsManagementCluster(managementClusterName)
+	err = utils.DeleteManagementCluster(managementClusterName, provider)
 	if err != nil {
 		log.Errorf("error while deleting management cluster: %v", err)
 
@@ -183,266 +183,22 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	}
 }
 
-// TODO: Duplicate of runManagementCluster in azure_test.go , just config is different
-func runAwsManagementCluster(managementClusterName string) error {
-	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(managementClusterName))
+func createCloudFormationStack() {
+	log.Info("Creating Cloud formation stack ")
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
 			"management-cluster",
-			"create",
-			managementClusterName,
-			// TODO: Should we add verbosity flag and value by default? or
-			// let the user define the verbosity when running the tests maybe?
-			// "-v",
-			// "10",
+			"permissions",
+			"aws",
+			"set",
 		},
-		Env:    append(os.Environ(), envVars...),
 		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
 		Stderr: log.ErrorWriter,
 	})
 
 	if err != nil {
-		return fmt.Errorf("error occurred while deploying management cluster. exit code: %v. error: %v", exitCode, err)
+		log.Fatalf("Error occurred while creating Cloud formation stack  Exit code: %v. Error: %v", exitCode, err)
 	}
 
-	return nil
-}
-
-// TODO: Duplicate of getManagementClusterKubeConfig in azure_test.go , just config is different
-func getAwsManagementClusterKubeConfig(managementClusterName string) {
-	// TODO: Do we really need the AWS secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(managementClusterName))
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		// TODO: Replace magic strings like "tanzu", "management-cluster" etc
-		Name: "tanzu",
-		Args: []string{
-			"management-cluster",
-			"kubeconfig",
-			"get",
-			managementClusterName,
-			"--admin",
-			// TODO: Should we add verbosity flag and value by default? or
-			// let the user define the verbosity (eg 0-9) when running the tests maybe?
-			// "-v",
-			// "9",
-		},
-		Env:    append(os.Environ(), envVars...),
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		log.Fatalf("Error occurred while getting management cluster kubeconfig. Exit code: %v. Error: %v", exitCode, err)
-	}
-}
-
-// TODO: Duplicate of deleteManagementCluster in azure_test.go , just config is different
-func deleteAwsManagementCluster(managementClusterName string) error {
-	// TODO: Do we really need the AWS secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(managementClusterName))
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"management-cluster",
-			"delete",
-			managementClusterName,
-			"--yes",
-			// TODO: Should we add verbosity flag and value by default? or
-			// let the user define the verbosity when running the tests maybe?
-			// "-v",
-			// "10",
-		},
-		Env:    append(os.Environ(), envVars...),
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		return fmt.Errorf("error occurred while deleting management cluster. exit code: %v. error: %v", exitCode, err)
-	}
-
-	return nil
-}
-
-// TODO: Duplicate of runWorkloadCluster in azure_test.go , just config is different
-func runAwsWorkloadCluster(workloadClusterName string) error {
-	// TODO: Do we really need the AWS secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"cluster",
-			"create",
-			workloadClusterName,
-			// TODO: Should we add verbosity flag and value by default? or
-			// let the user define the verbosity when running the tests maybe?
-			// "-v",
-			// "10",
-		},
-		Env:    append(os.Environ(), envVars...),
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		return fmt.Errorf("error occurred while deploying workload cluster. exit code: %v. error: %v", exitCode, err)
-	}
-
-	return nil
-}
-
-// TODO: Duplicate of getWorkloadClusterKubeConfig in azure_test.go , just config is different
-func getAwsWorkloadClusterKubeConfig(workloadClusterName string) {
-	// TODO: Do we really need the AWS secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"cluster",
-			"kubeconfig",
-			"get",
-			workloadClusterName,
-			"--admin",
-			// TODO: Should we add verbosity flag and value by default? or
-			// let the user define the verbosity (eg 0-9) when running the tests maybe?
-			// "-v",
-			// "9",
-		},
-		Env:    append(os.Environ(), envVars...),
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		log.Fatalf("Error occurred while getting workload cluster kubeconfig. Exit code: %v. Error: %v", exitCode, err)
-	}
-}
-
-// TODO: Duplicate of deleteWorkloadCluster in azure_test.go , just config is different
-func deleteAwsWorkloadCluster(workloadClusterName string) error {
-	// TODO: Do we really need the AWS secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuAwsConfig(workloadClusterName))
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"cluster",
-			"delete",
-			workloadClusterName,
-			"--yes",
-			// TODO: Should we add verbosity flag and value by default? or
-			// let the user define the verbosity when running the tests maybe?
-			// "-v",
-			// "10",
-		},
-		Env:    append(os.Environ(), envVars...),
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		return fmt.Errorf("error occurred while deleting workload cluster. exit code: %v. error: %v", exitCode, err)
-	}
-
-	return nil
-}
-
-// TODO: Consider using Tanzu golang client library instead of running tanzu as a CLI.
-// We could invoke plugins using their names and have tight integration. It comes with it's
-// own pros and cons. Pro - tight and smooth integration with Tanzu Framework.
-// Con - same as Pro - tight and smooth integration with Tanzu Framework - why? because Tanzu
-// Framework does not provide any guarantee for API support, also it's in 0.x.y series which
-// means they can break a lot of things which can break already generally fragile E2E tests
-// more easily and more often. Also, if we import Tanzu Framework as a library, to test different
-// versions of Tanzu Framework, we have import different versions of it, unlike CLI where we can
-// just install the appropriate CLI version before testing it. For example, test v0.11.4 TF that
-// TCE currently uses and also test v0.20.0 TF which is the latest version of TF. Of course it's not
-// easy to concurrently / simultaneously test both versions, at least not in CLI, and with library, idk,
-// it might be possible and easy? not sure for now, gotta experiment. We can also consider dynamically linked
-// libraries and similar concept, we currently instead have tanzu CLI tool which is dynamically invoked and linked
-// to this test program
-
-// TODO: Maybe create a wrapper function called Tanzu() around clirunner.Run()?
-
-func tanzuAwsConfig(clusterName string) TanzuConfig {
-	// TODO: Ideas:
-	// We could also represent this config in a test data yaml file,
-	// but config as code is more powerful - we can do more over here
-	// for example, run tests for multiple plans - dev and prod very
-	// easily instead of duplicating the whole config yaml file just to
-	// run same test with different plan. We can then easily run many tests
-	// with different set of config values by defining the range / possible set
-	// of test values for each config.
-	// Some configs that can be changed -
-	// 1. Infra provider can change if it's AWS, vSphere etc
-	// but this function is named as tanzuAzureConfig so it's okay.
-	// 2. Cluster plan - dev and prod
-	// 3. Azure location - the whole big list of azure locations
-	// 4. Azure control plane machine type - the whole big list of azure VM machine types. Note: https://github.com/vmware-tanzu/community-edition/issues/1749. Also note, we might need VMs of some minimum size for cluster creation to work
-	// 5. Azure worker node machine type - the whole big list of azure VM machine types. Note: https://github.com/vmware-tanzu/community-edition/issues/1749. Also note, we might need VMs of some minimum size for cluster creation to work
-	// 6. OS_ARCH - amd64, arm64 . There's talks around ARM support at different levels now
-	// 7. OS_VERSION - 20.04 or 18.04 as of now
-	// 8. AZURE_VNET_CIDR - any CIDR range
-	// 9. AZURE_CONTROL_PLANE_SUBNET_CIDR - any CIDR range
-	// 10. AZURE_NODE_SUBNET_CIDR - any CIDR range
-	// 11. CLUSTER_CIDR - any CIDR range
-	// 12. CLUSTER_CIDR - any CIDR range
-	// 13. ENABLE_CEIP_PARTICIPATION - true or false
-	// 14. ENABLE_MHC - true or false. In one issue, someone had to set this to false or else their cluster creation was failing
-	// 15. IDENTITY_MANAGEMENT_TYPE - none or some particular set of identity management types
-	return TanzuConfig{
-		"CLUSTER_NAME":               clusterName,
-		"AWS_AMI_ID":                 "ami-0bcd9ed3ef40fad77",
-		"INFRASTRUCTURE_PROVIDER":    "aws",
-		"CLUSTER_PLAN":               "dev",
-		"AWS_NODE_AZ":                "us-east-1a",
-		"AWS_REGION":                 "us-east-1",
-		"CONTROL_PLANE_MACHINE_TYPE": "m5.xlarge",
-		"NODE_MACHINE_TYPE":          "m5.xlarge",
-		"AWS_PRIVATE_NODE_CIDR":      "10.0.16.0/20",
-		"AWS_PUBLIC_NODE_CIDR":       "10.0.0.0/20",
-		"AWS_VPC_CIDR":               "10.0.0.0/16",
-		"CLUSTER_CIDR":               "100.96.0.0/11",
-		"SERVICE_CIDR":               "100.64.0.0/13",
-		"ENABLE_CEIP_PARTICIPATION":  "false",
-		"ENABLE_MHC":                 "true",
-		"BASTION_HOST_ENABLED":       "true",
-		"IDENTITY_MANAGEMENT_TYPE":   "none",
-	}
 }

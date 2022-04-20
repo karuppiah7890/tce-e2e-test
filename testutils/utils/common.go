@@ -16,7 +16,6 @@ import (
 
 // TODO: Further move the functions to specifics file/libs accordingly
 
-// TODO: Move this to a tanzu specific lib
 type TanzuConfig map[string]string
 
 type WorkloadCluster struct {
@@ -25,7 +24,6 @@ type WorkloadCluster struct {
 }
 type WorkloadClusters []WorkloadCluster
 
-// TODO: Move this to a common util / tanzu specific lib
 type EnvVars []string
 
 func CheckTanzuCLIInstallation() {
@@ -36,6 +34,7 @@ func CheckTanzuCLIInstallation() {
 	}
 	log.Infof("tanzu CLI is available at path: %s\n", path)
 }
+
 func CheckKubectlCLIInstallation() {
 	log.Info("Checking kubectl CLI installation")
 
@@ -140,7 +139,7 @@ func RunManagementCluster(managementClusterName string, provider string) error {
 }
 
 func GetManagementClusterKubeConfig(managementClusterName string, provider string) {
-	// TODO: Do we really need the AWS secrets here?
+	// TODO: Do we really need the secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuConfig(managementClusterName, provider))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		// TODO: Replace magic strings like "tanzu", "management-cluster" etc
@@ -219,7 +218,7 @@ func PrintClusterInformation(kubeConfigPath string, kubeContext string) error {
 }
 
 func RunWorkloadCluster(workloadClusterName string, provider string) error {
-	// TODO: Do we really need the AWS secrets here?
+	// TODO: Do we really need the  secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuConfig(workloadClusterName, provider))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
@@ -353,7 +352,7 @@ func listWorkloadClusters() WorkloadClusters {
 }
 
 func GetWorkloadClusterKubeConfig(workloadClusterName string, provider string) {
-	// TODO: Do we really need the AWS secrets here?
+	// TODO: Do we really need the  secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuConfig(workloadClusterName, provider))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
@@ -385,7 +384,7 @@ func GetWorkloadClusterKubeConfig(workloadClusterName string, provider string) {
 }
 
 func DeleteWorkloadCluster(workloadClusterName string, provider string) error {
-	// TODO: Do we really need the AWS secrets here?
+	// TODO: Do we really need the  secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuConfig(workloadClusterName, provider))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
@@ -418,7 +417,7 @@ func DeleteWorkloadCluster(workloadClusterName string, provider string) error {
 }
 
 func DeleteManagementCluster(managementClusterName string, provider string) error {
-	// TODO: Do we really need the AWS secrets here?
+	// TODO: Do we really need the  secrets here?
 	envVars := tanzuConfigToEnvVars(tanzuConfig(managementClusterName, provider))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
@@ -450,6 +449,7 @@ func DeleteManagementCluster(managementClusterName string, provider string) erro
 	return nil
 }
 
+//TODO: Should we stick to env vars for cluster config or can we use yaml like tanzu cli consumes
 func tanzuConfigToEnvVars(tanzuConfig TanzuConfig) EnvVars {
 	envVars := make(EnvVars, 0, len(tanzuConfig))
 
@@ -460,6 +460,7 @@ func tanzuConfigToEnvVars(tanzuConfig TanzuConfig) EnvVars {
 	return envVars
 }
 
+//TODO: Maybe make use of https://github.com/spf13/viper to set env vars and make some values as default and parameterised.
 func tanzuConfig(clusterName string, infraProvider string) TanzuConfig {
 	switch infraProvider {
 	case "aws":
