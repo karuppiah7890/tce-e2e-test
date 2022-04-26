@@ -3,7 +3,6 @@ package e2e
 import (
 	"fmt"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/vsphere"
 	"runtime"
 	"testing"
 	"time"
@@ -19,9 +18,9 @@ import (
 // TODO: Consider making all as environment variables. Hard coded values in test code can be default.
 // We can pass env vars to override stuff
 
-func TestVsphereManagementAndWorkloadCluster(t *testing.T) {
-	log.InitLogger("vsphere-mgmt-wkld-e2e")
+func TestManagementAndWorkloadCluster(t *testing.T) {
 	provider := "vsphere"
+	log.InitLogger(fmt.Sprintf("%s-mgmt-wkld-e2e", provider))
 	// TODO: Think about installing TCE / TF from tar ball and from source
 	// make release based on OS? Windows has make? Hmm
 	// release-dir
@@ -49,7 +48,10 @@ func TestVsphereManagementAndWorkloadCluster(t *testing.T) {
 		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guranteed to work!")
 	}
 
-	vsphere.CheckRequiredVsphereEnvVars()
+	b := utils.CheckEnvVars(provider)
+	if b != true {
+		log.Errorf("Please check the required env vars")
+	}
 
 	// Have different log levels - none/minimal, error, info, debug etc, so that we can accordingly use those in the E2E test
 

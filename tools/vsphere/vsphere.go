@@ -1,42 +1,30 @@
 package main
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/vmware/govmomi/examples"
-	"github.com/vmware/govmomi/view"
-	"github.com/vmware/govmomi/vim25"
-	"github.com/vmware/govmomi/vim25/mo"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/vsphere"
 )
 
 // This is just for Checking and using govmomi SDK  and getting VM names
 func main() {
-	examples.Run(func(ctx context.Context, c *vim25.Client) error {
-		// Create view of VirtualMachine objects
-		m := view.NewManager(c)
+	log.InitLogger("azure-mgmt-wkld-e2e")
 
-		v, err := m.CreateContainerView(ctx, c.ServiceContent.RootFolder, []string{"VirtualMachine"}, true)
-		if err != nil {
-			return err
-		}
+	ovaFiles := vsphere.GetOvaFileNameFromTanzuFramework()
+	log.Info(ovaFiles)
+	vsphere.RetriveAndDownlaod("0120", "photon-3-kube-v1.22.8+vmware.1-tkg.1-d69148b2a4aa7ef6d5380cc365cac8cd.ova")
+	log.Info("Retrived info")
+	//vsphere.ListVMs()
+	client := vsphere.GetGovmomiClient()
+	rs := vsphere.GetRestClient(client)
+	vmTemplates := vsphere.ListVmsTemplates(client)
+	item, err := vsphere.GetLibraryItem(rs)
+	if err != nil {
+		log.Errorf("something went wrong")
+	}
+	log.Info(item)
+	for _, y := range vmTemplates {
+		log.Info(y)
+	}
+	vsphere.RetriveVersion("0110")
 
-		defer v.Destroy(ctx)
-
-		// Retrieve summary property for all machines
-		// Reference: http://pubs.vmware.com/vsphere-60/topic/com.vmware.wssdk.apiref.doc/vim.VirtualMachine.html
-		var vms []mo.VirtualMachine
-		err = v.Retrieve(ctx, []string{"VirtualMachine"}, []string{"summary"}, &vms)
-		if err != nil {
-			return err
-		}
-
-		// Print summary per vm (see also: govc/vm/info.go)
-
-		for _, vm := range vms {
-			fmt.Printf("%s: %s\n", vm.Summary.Config.Name, vm.Summary.Config.GuestFullName, vm)
-		}
-
-		return nil
-	})
 }

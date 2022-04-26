@@ -6,7 +6,7 @@ import (
 )
 
 func CheckRequiredVsphereEnvVars() {
-	log.Info("Checking required AWS environment variables")
+	log.Info("Checking required vSphere environment variables")
 
 	requiredEnvVars := []string{
 		ManagementApiServerEndpoint,

@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/aws"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/vsphere"
 	"k8s.io/client-go/util/homedir"
 	"os"
 	"os/exec"
@@ -25,6 +28,24 @@ type WorkloadCluster struct {
 type WorkloadClusters []WorkloadCluster
 
 type EnvVars []string
+
+func CheckEnvVars(provider string) bool {
+	switch provider {
+	case "aws":
+		aws.CheckRequiredAwsEnvVars()
+		return true
+	case "azure":
+		azure.CheckRequiredAzureEnvVars()
+		return true
+	case "vsphere":
+		vsphere.CheckRequiredVsphereEnvVars()
+		return true
+	case "docker":
+		return true
+	default:
+		return false
+	}
+}
 
 func CheckTanzuCLIInstallation() {
 	log.Info("Checking tanzu CLI installation")
@@ -528,6 +549,20 @@ func tanzuConfig(clusterName string, infraProvider string) TanzuConfig {
 			"ENABLE_CEIP_PARTICIPATION":      "false",
 			"ENABLE_MHC":                     "true",
 			"IDENTITY_MANAGEMENT_TYPE":       "none",
+		}
+	case "docker":
+		return TanzuConfig{
+			"CLUSTER_NAME":              clusterName,
+			"INFRASTRUCTURE_PROVIDER":   "docker",
+			"CLUSTER_PLAN":              "dev",
+			"OS_ARCH":                   "",
+			"OS_NAME":                   "",
+			"OS_VERSION":                "",
+			"CLUSTER_CIDR":              "100.96.0.0/11",
+			"SERVICE_CIDR":              "100.64.0.0/13",
+			"ENABLE_CEIP_PARTICIPATION": "false",
+			"ENABLE_MHC":                "true",
+			"IDENTITY_MANAGEMENT_TYPE":  "none",
 		}
 	}
 	return TanzuConfig{
