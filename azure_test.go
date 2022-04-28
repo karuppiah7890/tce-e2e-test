@@ -39,6 +39,9 @@ import (
 // TODO: Consider making all as environment variables. Hard coded values in test code can be default
 // We can pass env vars to override stuff
 
+// TODO: Use the utils package in testutils package.
+// Check vsphere_test.go for usage of utils package
+
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("azure-mgmt-wkld-e2e")
 
