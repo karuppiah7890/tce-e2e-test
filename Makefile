@@ -1,6 +1,7 @@
 # TODO: Add target to run the E2E tests
 
-# TODO: Add target to run `go mod tidy -v -compat=1.17`
+tidy:
+	go mod tidy -v -compat=1.17
 
 # TODO: Add target to create standalone binary which can run the E2E tests
 
