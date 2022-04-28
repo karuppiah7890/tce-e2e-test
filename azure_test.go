@@ -113,7 +113,17 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 			log.Errorf("error while collecting diagnostics of management cluster: %v", err)
 		}
 
-		log.Fatal("error while running management cluster: %v", runManagementClusterErr)
+		err = CleanupDockerBootstrapCluster(managementClusterName)
+		if err != nil {
+			log.Errorf("error while cleaning up docker bootstrap cluster of the management cluster: %v", err)
+		}
+
+		err = azure.DeleteResourceGroup(context.TODO(), managementClusterName, azureTestSecrets.SubscriptionID, cred)
+		if err != nil {
+			log.Errorf("error while cleaning up azure resource group of the management cluster which has all the management cluster resources: %v", err)
+		}
+
+		log.Fatal("Summary: error while running management cluster: %v", runManagementClusterErr)
 	}
 
 	// TODO: check if management cluster is running by doing something similar to
@@ -212,6 +222,20 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 		log.Fatal("error while deleting management cluster: %v", err)
 	}
+}
+
+func CleanupDockerBootstrapCluster(managementClusterName string) error {
+	bootstrapClusterDockerContainerName, err := tanzu.GetBootstrapClusterDockerContainerNameForManagementCluster(managementClusterName)
+	if err != nil {
+		return fmt.Errorf("error getting bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
+	}
+
+	err = docker.StopRunningContainer(bootstrapClusterDockerContainerName)
+	if err != nil {
+		return fmt.Errorf("error force stopping and removing bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
+	}
+
+	return nil
 }
 
 // TODO: Move this to common util

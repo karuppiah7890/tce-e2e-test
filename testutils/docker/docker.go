@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 
 	"github.com/docker/docker/api/types"
@@ -48,15 +49,16 @@ func CheckDockerInstallation() {
 
 // TODO: rename this to RemoveRunningContainer ? Or StopAndRemoveRunningContainer? or ForceRemoveRunningContainer?
 // containerName - name of the container / container ID (full ID or unique partial ID)
-func StopRunningContainer(containerName string) {
+func StopRunningContainer(containerName string) error {
 	cli := GetDockerClient()
 
 	// TODO: Handle errors by returning them? Should we log them here too or let caller decide about the logging?
 	if err := cli.ContainerRemove(ctx, containerName, types.ContainerRemoveOptions{Force: true}); err != nil {
 		log.Infof("Failed to find container with  name: %s", containerName)
+		return fmt.Errorf("failed to find container with  name: %s", containerName)
 	}
 	log.Infof("Container removed: %s", containerName)
-
+	return nil
 }
 
 // TODO: rename this to RemoveAllRunningContainers ? Or StopAndRemoveAllRunningContainers? or ForceRemoveAllRunningContainers?
