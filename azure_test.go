@@ -105,14 +105,15 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// and cleanup management cluster
 	err := runManagementCluster(managementClusterName)
 	if err != nil {
-		log.Errorf("error while running management cluster: %v", err)
+		runManagementClusterErr := err
+		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
 
 		err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
 		if err != nil {
 			log.Errorf("error while collecting diagnostics of management cluster: %v", err)
 		}
 
-		log.Fatal("error while running management cluster: %v", err)
+		log.Fatal("error while running management cluster: %v", runManagementClusterErr)
 	}
 
 	// TODO: check if management cluster is running by doing something similar to
@@ -144,7 +145,8 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// and cleanup management cluster and then cleanup workload cluster
 	err = runWorkloadCluster(workloadClusterName)
 	if err != nil {
-		log.Errorf("error while running workload cluster: %v", err)
+		runWorkloadClusterErr := err
+		log.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
 
 		// TODO: Convert magic strings like "azure" to constants
 		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, "azure")
@@ -152,7 +154,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
 		}
 
-		log.Fatal("error while running workload cluster: %v", err)
+		log.Fatal("error while running workload cluster: %v", runWorkloadClusterErr)
 	}
 
 	checkWorkloadClusterIsRunning(workloadClusterName)
