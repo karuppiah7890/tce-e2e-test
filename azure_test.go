@@ -714,6 +714,9 @@ func deleteWorkloadCluster(workloadClusterName string) error {
 	return nil
 }
 
+// TODO: We can get this struct from Tanzu Framework pkg/library too
+// from `ClusterInfo` within `github.com/vmware-tanzu/tanzu-framework/pkg/v1/tkg/client` pkg in 7275f31196fd9d4f60946c9cbb5429baf7136f3b
+// version of Tanzu Framework which is after v0.20.0
 // TODO: Move this to a common util
 type WorkloadCluster struct {
 	Name   string `json:"name"`
