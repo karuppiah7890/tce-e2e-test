@@ -243,7 +243,7 @@ func CleanupDockerBootstrapCluster(managementClusterName string) error {
 		return fmt.Errorf("error getting bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
 	}
 
-	err = docker.StopRunningContainer(bootstrapClusterDockerContainerName)
+	err = docker.ForceRemoveRunningContainer(bootstrapClusterDockerContainerName)
 	if err != nil {
 		return fmt.Errorf("error force stopping and removing bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
 	}

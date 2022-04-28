@@ -12,5 +12,5 @@ func main() {
 	log.InitLogger("dockerctl")
 	docker.CheckDockerInstallation()
 	docker.ForceRemoveAllRunningContainers()
-	docker.StopRunningContainer("kind")
+	docker.ForceRemoveRunningContainer("kind")
 }

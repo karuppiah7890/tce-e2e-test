@@ -47,9 +47,9 @@ func CheckDockerInstallation() {
 	log.Infof("Docker Engine's version: %s", serverVersionInfo.Version)
 }
 
-// TODO: rename this to RemoveRunningContainer ? Or StopAndRemoveRunningContainer? or ForceRemoveRunningContainer?
 // containerName - name of the container / container ID (full ID or unique partial ID)
-func StopRunningContainer(containerName string) error {
+// ForceRemoveRunningContainer force stop and remove a running container
+func ForceRemoveRunningContainer(containerName string) error {
 	cli := GetDockerClient()
 
 	// TODO: Handle errors by returning them? Should we log them here too or let caller decide about the logging?
@@ -61,7 +61,6 @@ func StopRunningContainer(containerName string) error {
 	return nil
 }
 
-// TODO: rename this to RemoveAllRunningContainers ? Or StopAndRemoveAllRunningContainers? or ForceRemoveAllRunningContainers?
 func ForceRemoveAllRunningContainers() {
 	cli := GetDockerClient()
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
