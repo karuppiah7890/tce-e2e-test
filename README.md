@@ -4,6 +4,9 @@ This repo contains [TCE](https://github.com/vmware-tanzu/community-edition) E2E 
 
 ## Running the tests
 
+<!-- TODO: Add instructions on how to run all the tests together - AWS, Azure, vSphere, Docker -->
+<!-- TODO: Add instructions on how to run all the tests separately and independently - AWS, Azure, vSphere, Docker -->
+
 Ensure you have latest golang `1.17.x` installed
 
 ```bash
