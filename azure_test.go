@@ -118,6 +118,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 			log.Errorf("error while cleaning up docker bootstrap cluster of the management cluster: %v", err)
 		}
 
+		// TODO: Move this to a function named as cleanup azure cluster?
 		err = azure.DeleteResourceGroup(context.TODO(), managementClusterName, azureTestSecrets.SubscriptionID, cred)
 		if err != nil {
 			log.Errorf("error while cleaning up azure resource group of the management cluster which has all the management cluster resources: %v", err)
@@ -162,6 +163,18 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, "azure")
 		if err != nil {
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
+		}
+
+		// TODO: Move this to a function named as cleanup azure cluster?
+		err = azure.DeleteResourceGroup(context.TODO(), managementClusterName, azureTestSecrets.SubscriptionID, cred)
+		if err != nil {
+			log.Errorf("error while cleaning up azure resource group of the management cluster which has all the management cluster resources: %v", err)
+		}
+
+		// TODO: Move this to a function named as cleanup azure cluster?
+		err = azure.DeleteResourceGroup(context.TODO(), workloadClusterName, azureTestSecrets.SubscriptionID, cred)
+		if err != nil {
+			log.Errorf("error while cleaning up azure resource group of the workload cluster which has all the workload cluster resources: %v", err)
 		}
 
 		log.Fatal("error while running workload cluster: %v", runWorkloadClusterErr)
