@@ -7,7 +7,7 @@ import (
 
 // This is just for Checking and using govmomi SDK  and getting VM names
 func main() {
-	log.InitLogger("azure-mgmt-wkld-e2e")
+	log.InitLogger("vSphere-OVA-Upload-Testing")
 
 	ovaFiles := vsphere.GetOvaFileNameFromTanzuFramework()
 	log.Info(ovaFiles)
@@ -17,14 +17,21 @@ func main() {
 	client := vsphere.GetGovmomiClient()
 	rs := vsphere.GetRestClient(client)
 	vmTemplates := vsphere.ListVmsTemplates(client)
+
+	for _, y := range vmTemplates {
+		log.Info(y)
+	}
+	vsphere.CreateLibrary("test", rs, client)
+	lib := vsphere.GetLibrary("test", rs)
+	vsphere.ImportLibrary(rs, client, lib, ovaFiles[0])
+	vsphere.DeployVmFromLibrary(rs, client, lib)
+	vsphere.MarkAsTemplate(client, "testing")
+	vsphere.DeleteLibrary(lib, rs)
 	item, err := vsphere.GetLibraryItem(rs)
 	if err != nil {
 		log.Errorf("something went wrong")
 	}
 	log.Info(item)
-	for _, y := range vmTemplates {
-		log.Info(y)
-	}
 	vsphere.RetriveVersion("0110")
 
 }
