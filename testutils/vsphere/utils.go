@@ -14,6 +14,7 @@ import (
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/mo"
+	"github.com/vmware/govmomi/vim25/types"
 	"net/url"
 	"os"
 )
@@ -111,6 +112,30 @@ func ListVmsTemplates(client *vim25.Client) []string {
 
 }
 
+func ListVms(client *vim25.Client) []string {
+	m := view.NewManager(client)
+	v, err := m.CreateContainerView(ctx, client.ServiceContent.RootFolder, []string{"VirtualMachine"}, true)
+	if err != nil {
+		log.Errorf("%s", err)
+	}
+	defer v.Destroy(ctx)
+
+	var vms []mo.VirtualMachine
+	err = v.Retrieve(ctx, []string{"VirtualMachine"}, []string{"summary"}, &vms)
+	if err != nil {
+		log.Errorf("%s", err)
+	}
+
+	vmList := []string{}
+	for _, vm := range vms {
+		if vm.Summary.Config.Template != true {
+			vmList = append(vmList, vm.Summary.Config.Name)
+		}
+	}
+	return vmList
+
+}
+
 func GetLibraryItem(rc *rest.Client) ([]string, error) {
 	const (
 		libraryName = "test"
@@ -167,7 +192,7 @@ func GetLibrary(libraryName string, rc *rest.Client) *library.Library {
 }
 
 // To Upload OVA to Library
-func ImportLibrary(rc *rest.Client, client *vim25.Client, item *library.Library, file string) error {
+func ImportOVAFromLibrary(rc *rest.Client, client *vim25.Client, item *library.Library, file string) error {
 
 	//base := filepath.Base(file)
 	//ext := filepath.Ext(base)
@@ -292,6 +317,46 @@ func MarkAsTemplate(client *vim25.Client, vmName string) error {
 	if errs != nil {
 		log.Errorf("Unable To Make Vm As template")
 		return errs
+	}
+	return nil
+}
+
+func DeleteVM(client *vim25.Client, vmName string) error {
+	finder := find.NewFinder(client)
+	vm, err := finder.VirtualMachine(context.TODO(), vmName)
+	if err != nil {
+		if _, ok := err.(*find.NotFoundError); ok {
+			log.Errorf("Unable To find VM")
+			return err
+		}
+	}
+	var (
+		task  *object.Task
+		state types.VirtualMachinePowerState
+	)
+
+	state, err = vm.PowerState(ctx)
+	if err != nil {
+		return err
+	}
+
+	if state == types.VirtualMachinePowerStatePoweredOn {
+		task, err = vm.PowerOff(ctx)
+		if err != nil {
+			return err
+		}
+		// Ignore error since the VM may already been in powered off state.
+		// vm.Destroy will fail if the VM is still powered on.
+		_ = task.Wait(ctx)
+	}
+
+	task, err = vm.Destroy(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err = task.Wait(ctx); err != nil {
+		return err
 	}
 	return nil
 }

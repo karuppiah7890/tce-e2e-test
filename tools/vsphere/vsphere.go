@@ -23,9 +23,16 @@ func main() {
 	}
 	vsphere.CreateLibrary("test", rs, client)
 	lib := vsphere.GetLibrary("test", rs)
-	vsphere.ImportLibrary(rs, client, lib, ovaFiles[0])
+	vsphere.ImportOVAFromLibrary(rs, client, lib, ovaFiles[0])
 	vsphere.DeployVmFromLibrary(rs, client, lib)
 	vsphere.MarkAsTemplate(client, "testing")
+	for _, vm := range vsphere.ListVms(client) {
+		//err:=vsphere.DeleteVM(client,vm)
+		log.Infof("%s Vm will be deleted", vm)
+		//if err != nil {
+		//	log.Errorf("Unable to delete Vm")
+		//}
+	}
 	vsphere.DeleteLibrary(lib, rs)
 	item, err := vsphere.GetLibraryItem(rs)
 	if err != nil {
