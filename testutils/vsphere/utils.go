@@ -14,9 +14,12 @@ import (
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/mo"
+	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
 	"net/url"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 //TODO: Use VSPHERE_URL style Env Vars for now used to make use of same env vars what govc uses
@@ -194,14 +197,22 @@ func GetLibrary(libraryName string, rc *rest.Client) *library.Library {
 // To Upload OVA to Library
 func ImportOVAFromLibrary(rc *rest.Client, client *vim25.Client, item *library.Library, file string) error {
 
-	//base := filepath.Base(file)
-	//ext := filepath.Ext(base)
-	//mf := strings.Replace(base, ext, ".mf", 1)
+	base := filepath.Base(file)
+	ext := filepath.Ext(base)
+	mf := strings.Replace(base, ext, ".mf", 1)
+	manifest := make(map[string]*library.Checksum)
 	kind := library.ItemTypeOVF
 	opener := importx.Opener{Client: client}
 	archive := &importx.ArchiveFlag{Archive: &importx.FileArchive{Path: file, Opener: opener}}
-	archive.Archive = &importx.TapeArchive{Path: file, Opener: opener}
-
+	switch ext {
+	case ".ova":
+		archive.Archive = &importx.TapeArchive{Path: file, Opener: opener}
+		base = "*.ovf"
+		mf = "*.mf"
+		kind = library.ItemTypeOVF
+	case ".ovf":
+		kind = library.ItemTypeOVF
+	}
 	m := library.NewManager(rc)
 	lib, err := m.CreateLibraryItem(ctx, library.Item{Name: item.Name, ID: item.ID, Type: kind})
 	if err != nil {
@@ -210,6 +221,48 @@ func ImportOVAFromLibrary(rc *rest.Client, client *vim25.Client, item *library.L
 	session, err := m.CreateLibraryItemUpdateSession(ctx, library.Session{
 		ID: lib,
 	})
+	archive.Archive = &importx.TapeArchive{Path: file, Opener: opener}
+	f, _, err := archive.Open(mf)
+	if err == nil {
+		sums, err := library.ReadManifest(f)
+		_ = f.Close()
+		if err != nil {
+			return err
+		}
+		manifest = sums
+	} else {
+		msg := fmt.Sprintf("manifest %q: %s", mf, err)
+		log.Errorf("Error: %s", msg)
+	}
+	f, size, err := archive.Open(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if e, ok := f.(*importx.TapeArchiveEntry); ok {
+		file = e.Name // expand path.Match's (e.g. "*.ovf" -> "name.ovf")
+	}
+	info := library.UpdateFile{
+		Name:       file,
+		SourceType: "PUSH",
+		Checksum:   manifest[file],
+		Size:       size,
+	}
+
+	update, err := m.AddLibraryItemFile(ctx, session, info)
+	if err != nil {
+		return err
+	}
+	p := soap.DefaultUpload
+	p.ContentLength = size
+	u, err := url.Parse(update.UploadEndpoint.URI)
+	if err != nil {
+		return err
+	}
+	if err = client.Upload(ctx, f, u, &p); err != nil {
+		return err
+	}
 	return m.CompleteLibraryItemUpdateSession(ctx, session)
 }
 

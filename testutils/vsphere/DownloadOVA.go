@@ -90,8 +90,10 @@ func RetriveVersion(version string) []string {
 
 	ovaFiles := []string{}
 	for i := range jsonMap.DownloadFiles {
-		log.Info(jsonMap.DownloadFiles[i].FileName)
-		ovaFiles = append(ovaFiles, jsonMap.DownloadFiles[i].FileName)
+		if jsonMap.DownloadFiles[i].FileType == "ova" {
+			log.Info(jsonMap.DownloadFiles[i].FileName)
+			ovaFiles = append(ovaFiles, jsonMap.DownloadFiles[i].FileName)
+		}
 	}
 	return ovaFiles
 }

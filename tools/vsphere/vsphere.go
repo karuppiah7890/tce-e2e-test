@@ -8,14 +8,16 @@ import (
 // This is just for Checking and using govmomi SDK  and getting VM names
 func main() {
 	log.InitLogger("vSphere-OVA-Upload-Testing")
-
-	ovaFiles := vsphere.GetOvaFileNameFromTanzuFramework()
-	log.Info(ovaFiles)
-	vsphere.RetriveAndDownlaod("0120", "photon-3-kube-v1.22.8+vmware.1-tkg.1-d69148b2a4aa7ef6d5380cc365cac8cd.ova")
-	log.Info("Retrived info")
-	//vsphere.ListVMs()
+	tce := "0110"
+	//Setting Vsphere Clients
 	client := vsphere.GetGovmomiClient()
 	rs := vsphere.GetRestClient(client)
+	ovaFiles := vsphere.GetOvaFileNameFromTanzuFramework()
+	log.Info(ovaFiles)
+	vsphere.RetriveVersion(tce)
+	vsphere.RetriveAndDownlaod(tce, "photon-3-kube-v1.22.8+vmware.1-tkg.1-d69148b2a4aa7ef6d5380cc365cac8cd.ova")
+	log.Info("Retrived info")
+	//vsphere.ListVMs()
 	vmTemplates := vsphere.ListVmsTemplates(client)
 
 	for _, y := range vmTemplates {
@@ -39,6 +41,5 @@ func main() {
 		log.Errorf("something went wrong")
 	}
 	log.Info(item)
-	vsphere.RetriveVersion("0110")
 
 }
