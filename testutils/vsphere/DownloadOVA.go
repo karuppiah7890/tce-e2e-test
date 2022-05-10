@@ -13,6 +13,7 @@ import (
 )
 
 type Files struct {
+	// TODO: Extract out this struct into a type for brevity and clarity
 	DownloadFiles []struct {
 		FileName       string `json:"fileName"`
 		Sha1Checksum   string `json:"sha1checksum"`
@@ -35,6 +36,7 @@ type Files struct {
 }
 
 type Tkr struct {
+	// TODO: Extract out this struct into a type for brevity and clarity
 	Ova []struct {
 		Name   string `yaml:"name"`
 		Osinfo struct {
@@ -44,13 +46,15 @@ type Tkr struct {
 		} `json:"osinfo"`
 		Version string `yaml:"version"`
 	} `yaml:"ova"`
+	// TODO: Extract out this struct into a type for brevity and clarity
 	Azure []struct {
 		Sku             string `yaml:"sku"`
 		Publisher       string `yaml:"publisher"`
 		Offer           string `yaml:"offer"`
 		Version         string `yaml:"version"`
 		ThirdPartyImage bool   `yaml:"thirdPartyImage"`
-		Osinfo          struct {
+		// TODO: Extract out this struct into a type for brevity and clarity
+		Osinfo struct {
 			Name    string `yaml:"name"`
 			Version string `yaml:"version"`
 			Arch    string `yaml:"arch"`
