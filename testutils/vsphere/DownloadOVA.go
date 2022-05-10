@@ -3,12 +3,13 @@ package vsphere
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"gopkg.in/yaml.v3"
 )
 
 type Files struct {
@@ -65,7 +66,8 @@ const (
 	bom            = "bom"
 )
 
-func RetriveAndDownlaod(version string, fileName string) {
+// Rename to RetrieveAndDownload
+func RetrieveAndDownload(version string, fileName string) {
 
 	url := fmt.Sprintf("https://download3.vmware.com/software/TCE-%s/%s", version, fileName)
 	log.Infof(url)

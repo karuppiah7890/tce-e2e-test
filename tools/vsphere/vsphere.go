@@ -15,7 +15,7 @@ func main() {
 	ovaFiles := vsphere.GetOvaFileNameFromTanzuFramework()
 	log.Info(ovaFiles)
 	vsphere.RetriveVersion(tce)
-	vsphere.RetriveAndDownlaod(tce, "photon-3-kube-v1.22.8+vmware.1-tkg.1-d69148b2a4aa7ef6d5380cc365cac8cd.ova")
+	vsphere.RetrieveAndDownload(tce, "photon-3-kube-v1.22.8+vmware.1-tkg.1-d69148b2a4aa7ef6d5380cc365cac8cd.ova")
 	log.Info("Retrived info")
 	//vsphere.ListVMs()
 	vmTemplates := vsphere.ListVmsTemplates(client)
