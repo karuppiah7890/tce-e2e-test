@@ -56,6 +56,13 @@ func DeleteContext(kubeConfigPath string, contextName string) error {
 		return fmt.Errorf("could not find context named %s in kubeconfig file at path %s", contextName, kubeConfigPath)
 	}
 
+	// TODO: Should we consider setting it to any other valid context from the list of contexts?
+	// or just let the user do that?
+	// Overwrite current context with nothing if it's the context to be deleted.
+	if rawConfig.CurrentContext == contextName {
+		rawConfig.CurrentContext = ""
+	}
+
 	clusterName := context.Cluster
 	authInfoName := context.AuthInfo
 
