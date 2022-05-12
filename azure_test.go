@@ -101,9 +101,16 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: make the below function return an error and handle the error to log and exit?
 	acceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForManagementCluster...)
 
+	managementClusterKubeContext := getKubeContextForTanzuCluster(managementClusterName)
+	kubeConfigPath, err := getKubeConfigPath()
+	if err != nil {
+		// TODO: Should we continue here for any reason without stopping? As kubeconfig path is not available
+		log.Fatalf("error while getting kubeconfig path: %v", err)
+	}
+
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster
-	err := runManagementCluster(managementClusterName)
+	err = runManagementCluster(managementClusterName)
 	if err != nil {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
@@ -116,6 +123,11 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		err = CleanupDockerBootstrapCluster(managementClusterName)
 		if err != nil {
 			log.Errorf("error while cleaning up docker bootstrap cluster of the management cluster: %v", err)
+		}
+
+		err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
+		if err != nil {
+			log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 		}
 
 		// TODO: Move this to a function named as cleanup azure cluster?
@@ -133,13 +145,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: Handle errors
 	getManagementClusterKubeConfig(managementClusterName)
 
-	kubeConfigPath, err := getKubeConfigPath()
-	if err != nil {
-		// Should we panic here and stop?
-		log.Errorf("error while getting kubeconfig path: %v", err)
-	}
-	managementClusterKubeContext := getKubeContextForTanzuCluster(managementClusterName)
-
 	log.Infof("Management Cluster %s Information: ", managementClusterName)
 	err = printClusterInformation(kubeConfigPath, managementClusterKubeContext)
 	if err != nil {
@@ -151,6 +156,8 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: make the below function return an error and handle the error to log and exit?
 	acceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForWorkloadCluster...)
+
+	workloadClusterKubeContext := getKubeContextForTanzuCluster(workloadClusterName)
 
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster and then cleanup workload cluster
@@ -171,10 +178,20 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 			log.Errorf("error while cleaning up azure resource group of the management cluster which has all the management cluster resources: %v", err)
 		}
 
+		err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
+		if err != nil {
+			log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
+		}
+
 		// TODO: Move this to a function named as cleanup azure cluster?
 		err = azure.DeleteResourceGroup(context.TODO(), workloadClusterName, azureTestSecrets.SubscriptionID, cred)
 		if err != nil {
 			log.Errorf("error while cleaning up azure resource group of the workload cluster which has all the workload cluster resources: %v", err)
+		}
+
+		err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
+		if err != nil {
+			log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 		}
 
 		log.Fatal("error while running workload cluster: %v", runWorkloadClusterErr)
@@ -184,8 +201,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors
 	getWorkloadClusterKubeConfig(workloadClusterName)
-
-	workloadClusterKubeContext := getKubeContextForTanzuCluster(workloadClusterName)
 
 	log.Infof("Workload Cluster %s Information: ", workloadClusterName)
 	err = printClusterInformation(kubeConfigPath, workloadClusterKubeContext)
