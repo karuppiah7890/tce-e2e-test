@@ -190,7 +190,7 @@ func GetLibrary(libraryName string, rc *rest.Client) *library.Library {
 	if err != nil {
 		log.Errorf("Unable to create Library")
 	}
-	log.Infof("Library created %s ", res.Name)
+	log.Infof("Library Found %s ", res.Name)
 	return res
 }
 
@@ -219,7 +219,8 @@ func ImportOVAFromLibrary(rc *rest.Client, client *vim25.Client, item *library.L
 		log.Errorf("%s", err)
 	}
 	session, err := m.CreateLibraryItemUpdateSession(ctx, library.Session{
-		ID: lib,
+		ID:            item.ID,
+		LibraryItemID: lib,
 	})
 	archive.Archive = &importx.TapeArchive{Path: file, Opener: opener}
 	f, _, err := archive.Open(mf)
@@ -249,7 +250,6 @@ func ImportOVAFromLibrary(rc *rest.Client, client *vim25.Client, item *library.L
 		Checksum:   manifest[file],
 		Size:       size,
 	}
-
 	update, err := m.AddLibraryItemFile(ctx, session, info)
 	if err != nil {
 		return err
@@ -269,13 +269,14 @@ func ImportOVAFromLibrary(rc *rest.Client, client *vim25.Client, item *library.L
 // To Deploy Vm from Library will be used similar to
 // command `govc library.deploy -folder=/SDDC-Datacenter/vm/VMs-tce-test/ /tce-test/photon-3-kube-v1.22.8+vmware.1-tkg.1-d69148b2a4aa7ef6d5380cc365cac8cd`
 
-func DeployVmFromLibrary(rc *rest.Client, client *vim25.Client, item *library.Library) (*object.VirtualMachine, error) {
+func DeployVmFromLibrary(rc *rest.Client, client *vim25.Client, lib *library.Library) (*object.VirtualMachine, error) {
 	//TODO to use common Env Vars
 	envResourcePool := os.Getenv(envResourcePool)
 	envFolder := os.Getenv(envFolder)
 	envNetwork := os.Getenv(envNetwork)
 	envDataStore := os.Getenv(envDataStore)
 
+	libm := library.NewManager(rc)
 	finder := find.NewFinder(client)
 	resourcePools, err := finder.ResourcePoolList(ctx, envResourcePool)
 	if err != nil {
@@ -307,6 +308,7 @@ func DeployVmFromLibrary(rc *rest.Client, client *vim25.Client, item *library.Li
 		FolderID:       folders[0].Reference().Value,
 	},
 	}
+	item, err := libm.GetLibraryItem(ctx, lib.ID)
 	r, err := m.FilterLibraryItem(ctx, item.ID, fr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FilterLibraryItem error, %v\n", err)
@@ -340,7 +342,7 @@ func DeployVmFromLibrary(rc *rest.Client, client *vim25.Client, item *library.Li
 		},
 	}
 
-	ref, err := vcenter.NewManager(rc).DeployLibraryItem(ctx, item.ID, deploy)
+	ref, err := vcenter.NewManager(rc).DeployLibraryItem(ctx, lib.ID, deploy)
 	if err != nil {
 		fmt.Printf("Deploy vm from library failed, %v", err)
 		return nil, err
@@ -371,6 +373,7 @@ func MarkAsTemplate(client *vim25.Client, vmName string) error {
 		log.Errorf("Unable To Make Vm As template")
 		return errs
 	}
+	log.Infof(" VM %s Marked as template", vmName)
 	return nil
 }
 

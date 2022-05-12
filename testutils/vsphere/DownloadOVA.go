@@ -3,6 +3,7 @@ package vsphere
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/download"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -71,15 +72,25 @@ const (
 )
 
 // Rename to RetrieveAndDownload
-func RetrieveAndDownload(version string, fileName string) {
+func RetrieveAndDownload(version, dir, fileName string) {
 
 	url := fmt.Sprintf("https://download3.vmware.com/software/TCE-%s/%s", version, fileName)
 	log.Infof(url)
-	//downloadFile := "/tmp" + url
-	//download.DownloadFileFromUrl(url, downloadFile)
+	downloadFile := dir + fileName
+	exist := fileExists(downloadFile)
+
+	if exist {
+		log.Infof("File exist, Skipping download")
+	} else {
+		log.Infof("Downloading file at %s from %s", downloadFile, url)
+		download.DownloadFileFromUrl(url, downloadFile)
+	}
 
 }
-
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
+}
 func RetriveVersion(version string) []string {
 	url := fmt.Sprintf("https://customerconnect.vmware.com/channel/public/api/v1.0/dlg/details?downloadGroup=TCE-%s", version)
 	response, err := http.Get(url)
