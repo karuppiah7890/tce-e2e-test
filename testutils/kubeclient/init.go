@@ -40,6 +40,7 @@ func configForContext(kubeConfigPath string, context string) (*rest.Config, erro
 	return config, nil
 }
 
+// TODO: Should we rename this to CleanupContext?
 // new package / file for kubeconfig stuff?
 // DeleteContext deletes the context from the kubeconfig file and also deletes the corresponding
 // cluster and user from the kubeconfig file
