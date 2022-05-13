@@ -488,7 +488,6 @@ func tanzuConfig(clusterName string, infraProvider string) TanzuConfig {
 	case "aws":
 		return TanzuConfig{
 			"CLUSTER_NAME":               clusterName,
-			"AWS_AMI_ID":                 "ami-0bcd9ed3ef40fad77",
 			"INFRASTRUCTURE_PROVIDER":    "aws",
 			"CLUSTER_PLAN":               "dev",
 			"AWS_NODE_AZ":                "us-east-1a",
