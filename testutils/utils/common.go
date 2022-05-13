@@ -195,6 +195,7 @@ func GetManagementClusterKubeConfig(managementClusterName string, provider strin
 func GetKubeContextForTanzuCluster(clusterName string) string {
 	return fmt.Sprintf("%s-admin@%s", clusterName, clusterName)
 }
+
 func PrintClusterInformation(kubeConfigPath string, kubeContext string) error {
 	client, err := kubeclient.GetKubeClient(kubeConfigPath, kubeContext)
 	if err != nil {
