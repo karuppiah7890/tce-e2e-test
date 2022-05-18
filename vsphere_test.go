@@ -19,7 +19,7 @@ import (
 // We can pass env vars to override stuff
 
 func TestManagementAndWorkloadCluster(t *testing.T) {
-	provider := "vsphere"
+	provider := utils.VSPHERE
 	log.InitLogger(fmt.Sprintf("%s-mgmt-wkld-e2e", provider))
 	// TODO: Think about installing TCE / TF from tar ball and from source
 	// make release based on OS? Windows has make? Hmm
@@ -112,7 +112,6 @@ func TestManagementAndWorkloadCluster(t *testing.T) {
 	if err != nil {
 		log.Errorf("error while running workload cluster: %v", err)
 
-		// TODO: Convert magic strings like "aws" to constants
 		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider)
 		if err != nil {
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
@@ -146,7 +145,6 @@ func TestManagementAndWorkloadCluster(t *testing.T) {
 	if err != nil {
 		log.Errorf("error while deleting workload cluster: %v", err)
 
-		// TODO: Convert magic strings like "aws" to constants
 		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider)
 		if err != nil {
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)

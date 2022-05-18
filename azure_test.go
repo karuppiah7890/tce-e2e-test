@@ -31,8 +31,7 @@ import (
 // Check vsphere_test.go for usage of utils package
 
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
-	// TODO: Convert magic strings like "azure" to constants
-	provider := "azure"
+	provider := utils.AZURE
 	log.InitLogger("azure-mgmt-wkld-e2e")
 
 	// Ensure TCE/TF is installed - check TCE installation or install it if not present. Or do it prior to the test run.

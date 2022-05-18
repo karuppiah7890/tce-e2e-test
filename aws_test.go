@@ -2,11 +2,12 @@ package e2e
 
 import (
 	"fmt"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 	"runtime"
 	"testing"
 	"time"
+
+	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/aws"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
@@ -24,7 +25,7 @@ import (
 
 func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("aws-mgmt-wkld-e2e")
-	provider := "aws"
+	provider := utils.AWS
 	// TODO: Think about installing TCE / TF from tar ball and from source
 	// make release based on OS? Windows has make? Hmm
 	// release-dir
@@ -117,7 +118,6 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	if err != nil {
 		log.Errorf("error while running workload cluster: %v", err)
 
-		// TODO: Convert magic strings like "aws" to constants
 		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider)
 		if err != nil {
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
@@ -151,8 +151,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	if err != nil {
 		log.Errorf("error while deleting workload cluster: %v", err)
 
-		// TODO: Convert magic strings like "aws" to constants
-		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, "aws")
+		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider)
 		if err != nil {
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
 		}
