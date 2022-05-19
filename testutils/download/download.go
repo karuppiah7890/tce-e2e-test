@@ -25,6 +25,11 @@ func DownloadFileFromUrl(fileUrl string, targetFilePath string) error {
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode >= 400 && response.StatusCode <= 500 {
+		// TODO: Let's add response.Body too as part of the error to understand the error in a better manner?
+		return fmt.Errorf("error while downloading %s: Response status code: %d. Response status: %s", fileUrl, response.StatusCode, response.Status)
+	}
+
 	n, err := io.Copy(output, response.Body)
 	if err != nil {
 		return fmt.Errorf("error while downloading %s: %v", fileUrl, err)
