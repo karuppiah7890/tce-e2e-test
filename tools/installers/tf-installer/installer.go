@@ -26,7 +26,7 @@ func main() {
 	// TODO: Get version from flags (--version) or arguments
 
 	if len(os.Args) != 2 {
-		log.Fatal("Provide exactly one argument with Tanzu Framework (TF) version. Example Usage: tf-installer 0.20.0")
+		log.Fatal("Provide exactly one argument with Tanzu Framework (TF) version. Example Usage: tf-installer 0.21.0")
 	}
 
 	version := os.Args[1]

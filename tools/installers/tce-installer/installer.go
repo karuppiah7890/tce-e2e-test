@@ -30,7 +30,7 @@ func main() {
 	// TODO: Get version from flags (--version) or arguments
 
 	if len(os.Args) != 2 {
-		log.Fatal("Provide exactly one argument with Tanzu Community Edition (TCE) version. Example Usage: tce-installer 0.11.0")
+		log.Fatal("Provide exactly one argument with Tanzu Community Edition (TCE) version. Example Usage: tce-installer 0.12.1")
 	}
 
 	version := os.Args[1]
