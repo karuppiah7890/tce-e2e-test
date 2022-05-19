@@ -50,7 +50,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	utils.CheckKubectlCLIInstallation()
 
 	if runtime.GOOS == platforms.WINDOWS {
-		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guranteed to work!")
+		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guaranteed to work!")
 	}
 
 	// TODO: Ensure package plugin is present in case package tests are gonna be executed.
