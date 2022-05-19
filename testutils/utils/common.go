@@ -36,6 +36,9 @@ type WorkloadClusters []WorkloadCluster
 
 type EnvVars []string
 
+var ManagementClusterType = ClusterType{Name: "management-cluster"}
+var WorkloadClusterType = ClusterType{Name: "cluster"}
+
 func CheckEnvVars(provider string) bool {
 	switch provider {
 	case "aws":

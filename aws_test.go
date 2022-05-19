@@ -39,10 +39,10 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 
 	// Ensure management and workload cluster plugins are present.
 	// check if management cluster plugin is present
-	utils.CheckTanzuManagementClusterCLIPluginInstallation()
+	utils.CheckTanzuClusterCLIPluginInstallation(utils.ManagementClusterType)
 
 	// check if workload cluster plugin is present
-	utils.CheckTanzuWorkloadClusterCLIPluginInstallation()
+	utils.CheckTanzuClusterCLIPluginInstallation(utils.WorkloadClusterType)
 
 	// check if docker is installed. This is required by tanzu CLI I think, both docker client CLI and docker daemon
 	docker.CheckDockerInstallation()
@@ -79,7 +79,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	createCloudFormationStack()
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster
-	err := utils.RunManagementCluster(managementClusterName, provider)
+	err := utils.RunCluster(managementClusterName, provider, utils.ManagementClusterType)
 	if err != nil {
 		log.Errorf("error while running management cluster: %v", err)
 
@@ -95,7 +95,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// `tanzu management-cluster get | grep "${MANAGEMENT_CLUSTER_NAME}" | grep running`
 
 	// TODO: Handle errors
-	utils.GetManagementClusterKubeConfig(managementClusterName, provider)
+	utils.GetClusterKubeConfig(managementClusterName, provider, utils.ManagementClusterType)
 
 	kubeConfigPath, err := utils.GetKubeConfigPath()
 	if err != nil {
@@ -114,7 +114,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster and then cleanup workload cluster
 	// and cleanup management cluster and then cleanup workload cluster
-	err = utils.RunWorkloadCluster(workloadClusterName, provider)
+	err = utils.RunCluster(workloadClusterName, provider, utils.WorkloadClusterType)
 	if err != nil {
 		log.Errorf("error while running workload cluster: %v", err)
 
@@ -129,7 +129,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	utils.CheckWorkloadClusterIsRunning(workloadClusterName)
 
 	// TODO: Handle errors
-	utils.GetWorkloadClusterKubeConfig(workloadClusterName, provider)
+	utils.GetClusterKubeConfig(workloadClusterName, provider, utils.WorkloadClusterType)
 
 	workloadClusterKubeContext := utils.GetKubeContextForTanzuCluster(workloadClusterName)
 
@@ -147,7 +147,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster and then cleanup workload cluster
-	err = utils.DeleteWorkloadCluster(workloadClusterName, provider)
+	err = utils.DeleteCluster(workloadClusterName, provider, utils.WorkloadClusterType)
 	if err != nil {
 		log.Errorf("error while deleting workload cluster: %v", err)
 
@@ -169,7 +169,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
-	err = utils.DeleteManagementCluster(managementClusterName, provider)
+	err = utils.DeleteCluster(managementClusterName, provider, utils.ManagementClusterType)
 	if err != nil {
 		log.Errorf("error while deleting management cluster: %v", err)
 

@@ -40,12 +40,10 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// Ensure management and workload cluster plugins are present.
 	// check if management cluster plugin is present
-	ManagementClusterType := utils.ClusterType{Name: "management-cluster"}
-	utils.CheckTanzuClusterCLIPluginInstallation(ManagementClusterType)
+	utils.CheckTanzuClusterCLIPluginInstallation(utils.ManagementClusterType)
 
 	// check if workload cluster plugin is present
-	WorkloadClusterType := utils.ClusterType{Name: "cluster"}
-	utils.CheckTanzuClusterCLIPluginInstallation(WorkloadClusterType)
+	utils.CheckTanzuClusterCLIPluginInstallation(utils.WorkloadClusterType)
 
 	// check if docker is installed. This is required by tanzu CLI I think, both docker client CLI and docker daemon
 	docker.CheckDockerInstallation()
@@ -79,7 +77,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// the cluster or cluster resources using Tanzu to be able to do this instead of encoding the pipeline
 	// metadata in the cluster name but that's a good idea too :)
 
-	azureMarketplaceImageInfoForManagementCluster := getAzureMarketplaceImageInfoForClusters(managementClusterName, ManagementClusterType)
+	azureMarketplaceImageInfoForManagementCluster := getAzureMarketplaceImageInfoForClusters(managementClusterName, utils.ManagementClusterType)
 
 	// TODO: make the below function return an error and handle the error to log and exit?
 	azure.AcceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForManagementCluster...)
@@ -93,7 +91,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster
-	err = utils.RunCluster(managementClusterName, provider, ManagementClusterType)
+	err = utils.RunCluster(managementClusterName, provider, utils.ManagementClusterType)
 	if err != nil {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
@@ -126,7 +124,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// `tanzu management-cluster get | grep "${MANAGEMENT_CLUSTER_NAME}" | grep running`
 
 	// TODO: Handle errors
-	utils.GetClusterKubeConfig(managementClusterName, provider, ManagementClusterType)
+	utils.GetClusterKubeConfig(managementClusterName, provider, utils.ManagementClusterType)
 
 	log.Infof("Management Cluster %s Information: ", managementClusterName)
 	err = utils.PrintClusterInformation(kubeConfigPath, managementClusterKubeContext)
@@ -135,7 +133,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
 
-	azureMarketplaceImageInfoForWorkloadCluster := getAzureMarketplaceImageInfoForClusters(workloadClusterName, WorkloadClusterType)
+	azureMarketplaceImageInfoForWorkloadCluster := getAzureMarketplaceImageInfoForClusters(workloadClusterName, utils.WorkloadClusterType)
 
 	// TODO: make the below function return an error and handle the error to log and exit?
 	azure.AcceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForWorkloadCluster...)
@@ -144,7 +142,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster and then cleanup workload cluster
-	err = utils.RunCluster(workloadClusterName, provider, WorkloadClusterType)
+	err = utils.RunCluster(workloadClusterName, provider, utils.WorkloadClusterType)
 	if err != nil {
 		runWorkloadClusterErr := err
 		log.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
@@ -182,7 +180,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	utils.CheckWorkloadClusterIsRunning(workloadClusterName)
 
 	// TODO: Handle errors
-	utils.GetClusterKubeConfig(workloadClusterName, provider, WorkloadClusterType)
+	utils.GetClusterKubeConfig(workloadClusterName, provider, utils.WorkloadClusterType)
 
 	log.Infof("Workload Cluster %s Information: ", workloadClusterName)
 	err = utils.PrintClusterInformation(kubeConfigPath, workloadClusterKubeContext)
@@ -198,7 +196,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster and then cleanup workload cluster
-	err = utils.DeleteCluster(workloadClusterName, provider, WorkloadClusterType)
+	err = utils.DeleteCluster(workloadClusterName, provider, utils.WorkloadClusterType)
 	if err != nil {
 		log.Errorf("error while deleting workload cluster: %v", err)
 
@@ -220,7 +218,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
-	err = utils.DeleteCluster(managementClusterName, provider, ManagementClusterType)
+	err = utils.DeleteCluster(managementClusterName, provider, utils.ManagementClusterType)
 	if err != nil {
 		log.Errorf("error while deleting management cluster: %v", err)
 
