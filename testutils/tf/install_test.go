@@ -8,7 +8,7 @@ import (
 )
 
 func TestTfLegacyInstall(t *testing.T) {
-	version := "0.21.1"
+	version := "0.21.0"
 
 	err := tf.LegacyInstall(version)
 	if err != nil {
