@@ -4,6 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"time"
+
 	"github.com/karuppiah7890/tce-e2e-test/testutils/aws"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
@@ -11,15 +16,15 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/vsphere"
 	"k8s.io/client-go/util/homedir"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"time"
 )
 
 // TODO: Further move the functions to specifics file/libs accordingly
 
 type TanzuConfig map[string]string
+
+type ClusterType struct {
+	Name string
+}
 
 type WorkloadCluster struct {
 	Name   string `json:"name"`
@@ -45,6 +50,10 @@ func CheckEnvVars(provider string) bool {
 	default:
 		return false
 	}
+}
+
+func (clusterType ClusterType) TanzuCommand() string {
+	return clusterType.Name
 }
 
 func CheckTanzuCLIInstallation() {
@@ -76,7 +85,7 @@ func GetKubeConfigPath() (string, error) {
 	return filepath.Join(home, ".kube", "config"), nil
 }
 
-func CheckTanzuManagementClusterCLIPluginInstallation() {
+func CheckTanzuClusterCLIPluginInstallation(clusterType ClusterType) {
 	log.Info("Checking tanzu management cluster plugin CLI installation")
 
 	// TODO: Check for errors and return error?
@@ -85,7 +94,7 @@ func CheckTanzuManagementClusterCLIPluginInstallation() {
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
-			"management-cluster",
+			clusterType.TanzuCommand(),
 			"version",
 		},
 		Stdout: log.InfoWriter,
@@ -103,41 +112,14 @@ func CheckTanzuManagementClusterCLIPluginInstallation() {
 	}
 }
 
-func CheckTanzuWorkloadClusterCLIPluginInstallation() {
-	log.Info("Checking tanzu workload cluster plugin CLI installation")
-
-	// TODO: Check for errors and return error?
-	// TODO: Parse version and show warning if version is newer than what's tested by the devs while writing test
-	// Refer - https://github.com/karuppiah7890/tce-e2e-test/issues/1#issuecomment-1094172278
+func RunCluster(clusterName string, provider string, clusterType ClusterType) error {
+	envVars := tanzuConfigToEnvVars(tanzuConfig(clusterName, provider))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
-			"cluster",
-			"version",
-		},
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		log.Fatalf("Error occurred while checking workload cluster CLI plugin installation. Exit code: %v. Error: %v", exitCode, err)
-	}
-}
-
-func RunManagementCluster(managementClusterName string, provider string) error {
-	envVars := tanzuConfigToEnvVars(tanzuConfig(managementClusterName, provider))
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"management-cluster",
+			clusterType.TanzuCommand(),
 			"create",
-			managementClusterName,
+			clusterName,
 			// TODO: Should we add verbosity flag and value by default? or
 			// let the user define the verbosity when running the tests maybe?
 			// "-v",
@@ -154,22 +136,22 @@ func RunManagementCluster(managementClusterName string, provider string) error {
 		Stderr: log.ErrorWriter,
 	})
 	if err != nil {
-		return fmt.Errorf("error occurred while deploying management cluster. exit code: %v. error: %v", exitCode, err)
+		return fmt.Errorf("error occurred while deploying %v. exit code: %v. error: %v", clusterName, exitCode, err)
 	}
 	return nil
 }
 
-func GetManagementClusterKubeConfig(managementClusterName string, provider string) {
+func GetClusterKubeConfig(clusterName string, provider string, clusterType ClusterType) {
 	// TODO: Do we really need the secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuConfig(managementClusterName, provider))
+	envVars := tanzuConfigToEnvVars(tanzuConfig(clusterName, provider))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		// TODO: Replace magic strings like "tanzu", "management-cluster" etc
 		Name: "tanzu",
 		Args: []string{
-			"management-cluster",
+			clusterType.TanzuCommand(),
 			"kubeconfig",
 			"get",
-			managementClusterName,
+			clusterName,
 			"--admin",
 			// TODO: Should we add verbosity flag and value by default? or
 			// let the user define the verbosity (eg 0-9) when running the tests maybe?
@@ -188,7 +170,7 @@ func GetManagementClusterKubeConfig(managementClusterName string, provider strin
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while getting management cluster kubeconfig. Exit code: %v. Error: %v", exitCode, err)
+		log.Fatalf("Error occurred while getting %v kubeconfig. Exit code: %v. Error: %v", clusterName, exitCode, err)
 	}
 }
 
@@ -234,38 +216,6 @@ func PrintClusterInformation(kubeConfigPath string, kubeContext string) error {
 	for _, node := range nodes.Items {
 		// TODO: There is some issue here, node.Status.Phase gives empty string I think
 		log.Infof("%s\t%s", node.Name, node.Status.Phase)
-	}
-
-	return nil
-}
-
-func RunWorkloadCluster(workloadClusterName string, provider string) error {
-	// TODO: Do we really need the  secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuConfig(workloadClusterName, provider))
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"cluster",
-			"create",
-			workloadClusterName,
-			// TODO: Should we add verbosity flag and value by default? or
-			// let the user define the verbosity when running the tests maybe?
-			// "-v",
-			// "10",
-		},
-		Env:    append(os.Environ(), envVars...),
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		return fmt.Errorf("error occurred while deploying workload cluster. exit code: %v. error: %v", exitCode, err)
 	}
 
 	return nil
@@ -373,47 +323,15 @@ func listWorkloadClusters() WorkloadClusters {
 	return workloadClusters
 }
 
-func GetWorkloadClusterKubeConfig(workloadClusterName string, provider string) {
+func DeleteCluster(clusterName string, provider string, clusterType ClusterType) error {
 	// TODO: Do we really need the  secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuConfig(workloadClusterName, provider))
+	envVars := tanzuConfigToEnvVars(tanzuConfig(clusterName, provider))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
-			"cluster",
-			"kubeconfig",
-			"get",
-			workloadClusterName,
-			"--admin",
-			// TODO: Should we add verbosity flag and value by default? or
-			// let the user define the verbosity (eg 0-9) when running the tests maybe?
-			// "-v",
-			// "9",
-		},
-		Env:    append(os.Environ(), envVars...),
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		log.Fatalf("Error occurred while getting workload cluster kubeconfig. Exit code: %v. Error: %v", exitCode, err)
-	}
-}
-
-func DeleteWorkloadCluster(workloadClusterName string, provider string) error {
-	// TODO: Do we really need the  secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuConfig(workloadClusterName, provider))
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"cluster",
+			clusterType.TanzuCommand(),
 			"delete",
-			workloadClusterName,
+			clusterName,
 			"--yes",
 			// TODO: Should we add verbosity flag and value by default? or
 			// let the user define the verbosity when running the tests maybe?
@@ -432,40 +350,7 @@ func DeleteWorkloadCluster(workloadClusterName string, provider string) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("error occurred while deleting workload cluster. exit code: %v. error: %v", exitCode, err)
-	}
-
-	return nil
-}
-
-func DeleteManagementCluster(managementClusterName string, provider string) error {
-	// TODO: Do we really need the  secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuConfig(managementClusterName, provider))
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		Name: "tanzu",
-		Args: []string{
-			"management-cluster",
-			"delete",
-			managementClusterName,
-			"--yes",
-			// TODO: Should we add verbosity flag and value by default? or
-			// let the user define the verbosity when running the tests maybe?
-			// "-v",
-			// "10",
-		},
-		Env:    append(os.Environ(), envVars...),
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		return fmt.Errorf("error occurred while deleting management cluster. exit code: %v. error: %v", exitCode, err)
+		return fmt.Errorf("error occurred while deleting %v. exit code: %v. error: %v", clusterName, exitCode, err)
 	}
 
 	return nil
