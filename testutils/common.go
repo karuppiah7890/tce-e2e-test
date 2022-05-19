@@ -1,8 +1,12 @@
 package testutils
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 )
@@ -23,4 +27,26 @@ func CheckRequiredEnvVars(requiredEnvVars []string) []error {
 	}
 
 	return errors
+}
+
+func SplitYAML(resources []byte) ([][]byte, error) {
+	dec := yaml.NewDecoder(bytes.NewReader(resources))
+
+	var res [][]byte
+	for {
+		var value interface{}
+		err := dec.Decode(&value)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		valueBytes, err := yaml.Marshal(value)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, valueBytes)
+	}
+	return res, nil
 }

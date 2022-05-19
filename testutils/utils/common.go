@@ -12,8 +12,10 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/aws"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/vsphere"
 	"k8s.io/client-go/util/homedir"
 )
@@ -321,6 +323,20 @@ func listWorkloadClusters() WorkloadClusters {
 	json.NewDecoder(&clusterListOutput).Decode(&workloadClusters)
 
 	return workloadClusters
+}
+
+func CleanupDockerBootstrapCluster(managementClusterName string) error {
+	bootstrapClusterDockerContainerName, err := tanzu.GetBootstrapClusterDockerContainerNameForManagementCluster(managementClusterName)
+	if err != nil {
+		return fmt.Errorf("error getting bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
+	}
+
+	err = docker.ForceRemoveRunningContainer(bootstrapClusterDockerContainerName)
+	if err != nil {
+		return fmt.Errorf("error force stopping and removing bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
+	}
+
+	return nil
 }
 
 func DeleteCluster(clusterName string, provider string, clusterType ClusterType) error {

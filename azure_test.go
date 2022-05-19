@@ -6,29 +6,20 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"runtime"
 	"testing"
 	"time"
-
-	"gopkg.in/yaml.v3"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/kubescheme"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 
-	kubeRuntime "k8s.io/apimachinery/pkg/runtime"
 	capzv1beta1 "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
-
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/marketplaceordering/armmarketplaceordering"
 )
 
 // TODO: Make region as environment variable
@@ -92,7 +83,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	azureMarketplaceImageInfoForManagementCluster := getAzureMarketplaceImageInfoForClusters(managementClusterName, ManagementClusterType)
 
 	// TODO: make the below function return an error and handle the error to log and exit?
-	acceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForManagementCluster...)
+	azure.AcceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForManagementCluster...)
 
 	managementClusterKubeContext := utils.GetKubeContextForTanzuCluster(managementClusterName)
 	kubeConfigPath, err := utils.GetKubeConfigPath()
@@ -113,7 +104,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 			log.Errorf("error while collecting diagnostics of management cluster: %v", err)
 		}
 
-		err = CleanupDockerBootstrapCluster(managementClusterName)
+		err = utils.CleanupDockerBootstrapCluster(managementClusterName)
 		if err != nil {
 			log.Errorf("error while cleaning up docker bootstrap cluster of the management cluster: %v", err)
 		}
@@ -148,7 +139,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	azureMarketplaceImageInfoForWorkloadCluster := getAzureMarketplaceImageInfoForClusters(workloadClusterName, WorkloadClusterType)
 
 	// TODO: make the below function return an error and handle the error to log and exit?
-	acceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForWorkloadCluster...)
+	azure.AcceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForWorkloadCluster...)
 
 	workloadClusterKubeContext := utils.GetKubeContextForTanzuCluster(workloadClusterName)
 
@@ -243,158 +234,10 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	}
 }
 
-func CleanupDockerBootstrapCluster(managementClusterName string) error {
-	bootstrapClusterDockerContainerName, err := tanzu.GetBootstrapClusterDockerContainerNameForManagementCluster(managementClusterName)
-	if err != nil {
-		return fmt.Errorf("error getting bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
-	}
-
-	err = docker.ForceRemoveRunningContainer(bootstrapClusterDockerContainerName)
-	if err != nil {
-		return fmt.Errorf("error force stopping and removing bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
-	}
-
-	return nil
-}
-
-// TODO: Move this to a azure specific util
-// TODO: Should we just use one function acceptAzureImageLicenses with the whole implementation? There will be a for loop with a big body though
-func acceptAzureImageLicenses(subscriptionID string, cred *azidentity.ClientSecretCredential, azureMarketplaceImages ...*capzv1beta1.AzureMarketplaceImage) {
-	for _, azureMarketplaceImage := range azureMarketplaceImages {
-		acceptAzureImageLicense(subscriptionID, cred, azureMarketplaceImage)
-	}
-}
-
-// TODO: Move this to a azure specific util
-// This naming is for clarity until we move the function to some azure specific
-// package then we can remove the reference to azure from it and rename
-// it back to acceptImageLicense
-func acceptAzureImageLicense(subscriptionID string, cred *azidentity.ClientSecretCredential, azureMarketplaceImage *capzv1beta1.AzureMarketplaceImage) {
-	azureVmImagePublisher := azureMarketplaceImage.Publisher
-	azureVmImageBillingPlanSku := azureMarketplaceImage.SKU
-	azureVmImageOffer := azureMarketplaceImage.Offer
-
-	ctx := context.Background()
-	client := armmarketplaceordering.NewMarketplaceAgreementsClient(subscriptionID, cred, nil)
-
-	log.Info("Getting marketplace terms for Azure VM image")
-	res, err := client.Get(ctx,
-		armmarketplaceordering.OfferType(armmarketplaceordering.OfferTypeVirtualmachine),
-		azureVmImagePublisher,
-		azureVmImageOffer,
-		azureVmImageBillingPlanSku,
-		nil)
-	if err != nil {
-		log.Fatalf("Error while getting marketplace terms for Azure VM image: %+v", err)
-	}
-
-	agreementTerms := res.MarketplaceAgreementsClientGetResult.AgreementTerms
-
-	if agreementTerms.Properties == nil {
-		log.Fatalf("Error: Azure VM image agreement terms Properties field is not available")
-	}
-
-	if agreementTerms.Properties.Accepted == nil {
-		log.Fatalf("Error: Azure VM image agreement terms Properties Accepted field is not available")
-	}
-
-	if isTermsAccepted := *agreementTerms.Properties.Accepted; isTermsAccepted {
-		log.Info("Azure VM image agreement terms are already accepted")
-	} else {
-		log.Info("Azure VM image agreement terms is not already accepted. Accepting the Azure VM image agreement terms now")
-
-		*agreementTerms.Properties.Accepted = true
-		// Note: We sign using a PUT request to change the `accepted` property in the agreement. This is how Azure CLI does it too.
-		// This is because the sign API does not work as of this comment. Reference - https://docs.microsoft.com/en-us/answers/questions/52637/cannot-sign-azure-marketplace-vm-image-licence-thr.html
-		createResponse, err := client.Create(ctx, armmarketplaceordering.OfferTypeVirtualmachine, azureVmImagePublisher, azureVmImageOffer, azureVmImageBillingPlanSku, agreementTerms, nil)
-		if err != nil {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: %+v", err)
-		}
-
-		signedAgreementTerms := createResponse.AgreementTerms
-
-		if signedAgreementTerms.Properties == nil {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties field is not available")
-		}
-
-		if signedAgreementTerms.Properties.Accepted == nil {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties Accepted field is not available")
-		}
-
-		if isTermsSignedAndAccepted := *signedAgreementTerms.Properties.Accepted; !isTermsSignedAndAccepted {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms was not signed and accepted")
-		} else {
-			log.Info("Accepted the Azure VM image agreement terms!")
-		}
-	}
-}
-
-// Maybe return []*capzv1beta1.AzureMachineTemplate directly? Instead of []kubeRuntime.Object
-// TODO: Rename this in a better manner? The function name and argument too
-func parseK8sYamlAndFetchAzureMachineTemplates(fileR []byte) []kubeRuntime.Object {
-
-	// TODO: Should we just use simple plain string match since we just want to pick AzureMachineTemplate only?
-	// But yeah, in future we might parse other stuff, but as of now I don't see any such thing, so we could simplify this
-	// For more types, use something like `(Role|ConfigMap)` etc
-	acceptedK8sTypes := regexp.MustCompile(`(AzureMachineTemplate)`)
-	sepYamlFilesBytes, err := SplitYAML(fileR)
-	if err != nil {
-		// return and handle error?
-		log.Fatalf("Error while splitting YAML file. Err was: %s", err)
-	}
-	retVal := make([]kubeRuntime.Object, 0, len(sepYamlFilesBytes))
-	for _, fBytes := range sepYamlFilesBytes {
-		f := string(fBytes)
-		if f == "\n" || f == "" {
-			// ignore empty cases
-			continue
-		}
-
-		decode := serializer.NewCodecFactory(kubescheme.GetScheme()).UniversalDeserializer().Decode
-		obj, groupVersionKind, err := decode(fBytes, nil, nil)
-
-		if err != nil {
-			// return and handle error?
-			log.Fatalf("Error while decoding YAML object. Err was: %s", err)
-			continue
-		}
-
-		if !acceptedK8sTypes.MatchString(groupVersionKind.Kind) {
-			// The output contains K8s object types which are not needed so we are skipping this object with type groupVersionKind.Kind
-		} else {
-			retVal = append(retVal, obj)
-		}
-
-	}
-	return retVal
-}
-
-func SplitYAML(resources []byte) ([][]byte, error) {
-	dec := yaml.NewDecoder(bytes.NewReader(resources))
-
-	var res [][]byte
-	for {
-		var value interface{}
-		err := dec.Decode(&value)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		valueBytes, err := yaml.Marshal(value)
-		if err != nil {
-			return nil, err
-		}
-		res = append(res, valueBytes)
-	}
-	return res, nil
-}
-
 func getAzureMarketplaceImageInfoForClusters(clusterName string, clusterType utils.ClusterType) []*capzv1beta1.AzureMarketplaceImage {
 	var clusterCreateDryRunOutputBuffer bytes.Buffer
 
-	envVars := tanzuConfigToEnvVars(tanzuAzureConfig(clusterName))
+	envVars := tanzu.TanzuConfigToEnvVars(tanzu.TanzuAzureConfig(clusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -437,7 +280,7 @@ func getAzureMarketplaceImageInfoForClusters(clusterName string, clusterType uti
 		log.Fatalf("Error occurred while reading output of %v create dry run: %v", clusterName, err)
 	}
 
-	objects := parseK8sYamlAndFetchAzureMachineTemplates(clusterCreateDryRunOutput)
+	objects := azure.ParseK8sYamlAndFetchAzureMachineTemplates(clusterCreateDryRunOutput)
 
 	marketplaces := []*capzv1beta1.AzureMarketplaceImage{}
 
@@ -451,93 +294,4 @@ func getAzureMarketplaceImageInfoForClusters(clusterName string, clusterType uti
 	}
 
 	return marketplaces
-}
-
-// TODO: Consider using Tanzu golang client library instead of running tanzu as a CLI.
-// We could invoke plugins using their names and have tight integration. It comes with it's
-// own pros and cons. Pro - tight and smooth integration with Tanzu Framework.
-// Con - same as Pro - tight and smooth integration with Tanzu Framework - why? because Tanzu
-// Framework does not provide any guarantee for API support, also it's in 0.x.y series which
-// means they can break a lot of things which can break already generally fragile E2E tests
-// more easily and more often. Also, if we import Tanzu Framework as a library, to test different
-// versions of Tanzu Framework, we have import different versions of it, unlike CLI where we can
-// just install the appropriate CLI version before testing it. For example, test v0.11.4 TF that
-// TCE currently uses and also test v0.20.0 TF which is the latest version of TF. Of course it's not
-// easy to concurrently / simultaneously test both versions, at least not in CLI, and with library, idk,
-// it might be possible and easy? not sure for now, gotta experiment. We can also consider dynamically linked
-// libraries and similar concept, we currently instead have tanzu CLI tool which is dynamically invoked and linked
-// to this test program
-
-// TODO: Maybe create a wrapper function called Tanzu() around clirunner.Run?
-
-// TODO: Move this to a tanzu specific lib
-type TanzuConfig map[string]string
-
-// TODO: Move this to a common util / tanzu specific lib
-type EnvVars []string
-
-// TODO: Move this to a tanzu specific lib
-func tanzuAzureConfig(clusterName string) TanzuConfig {
-	// TODO: Ideas:
-	// We could also represent this config in a test data yaml file,
-	// but config as code is more powerful - we can do more over here
-	// for example, run tests for multiple plans - dev and prod very
-	// easily instead of duplicating the whole config yaml file just to
-	// run same test with different plan. We can then easily run many tests
-	// with different set of config values by defining the range / possible set
-	// of test values for each config.
-	// Some configs that can be changed -
-	// 1. Infra provider can change if it's AWS, vSphere etc
-	// but this function is named as tanzuAzureConfig so it's okay.
-	// 2. Cluster plan - dev and prod
-	// 3. Azure location - the whole big list of azure locations
-	// 4. Azure control plane machine type - the whole big list of azure VM machine types. Note: https://github.com/vmware-tanzu/community-edition/issues/1749. Also note, we might need VMs of some minimum size for cluster creation to work
-	// 5. Azure worker node machine type - the whole big list of azure VM machine types. Note: https://github.com/vmware-tanzu/community-edition/issues/1749. Also note, we might need VMs of some minimum size for cluster creation to work
-	// 6. OS_ARCH - amd64, arm64 . There's talks around ARM support at different levels now
-	// 7. OS_VERSION - 20.04 or 18.04 as of now
-	// 8. AZURE_VNET_CIDR - any CIDR range
-	// 9. AZURE_CONTROL_PLANE_SUBNET_CIDR - any CIDR range
-	// 10. AZURE_NODE_SUBNET_CIDR - any CIDR range
-	// 11. CLUSTER_CIDR - any CIDR range
-	// 12. CLUSTER_CIDR - any CIDR range
-	// 13. ENABLE_CEIP_PARTICIPATION - true or false
-	// 14. ENABLE_MHC - true or false. In one issue, someone had to set this to false or else their cluster creation was failing
-	// 15. IDENTITY_MANAGEMENT_TYPE - none or some particular set of identity management types
-
-	// TODO: In our bash E2E test, we control the value of the below env vars using the cluster name along with some suffix
-	// AZURE_RESOURCE_GROUP
-	// AZURE_VNET_RESOURCE_GROUP
-	// AZURE_VNET_NAME
-	// AZURE_CONTROL_PLANE_SUBNET_NAME
-	// AZURE_NODE_SUBNET_NAME
-	return TanzuConfig{
-		"CLUSTER_NAME":                     clusterName,
-		"INFRASTRUCTURE_PROVIDER":          "azure",
-		"CLUSTER_PLAN":                     "dev",
-		"AZURE_LOCATION":                   "australiaeast",
-		"AZURE_CONTROL_PLANE_MACHINE_TYPE": "Standard_D4s_v3",
-		"AZURE_NODE_MACHINE_TYPE":          "Standard_D4s_v3",
-		"OS_ARCH":                          "amd64",
-		"OS_NAME":                          "ubuntu",
-		"OS_VERSION":                       "20.04",
-		"AZURE_VNET_CIDR":                  "10.0.0.0/16",
-		"AZURE_CONTROL_PLANE_SUBNET_CIDR":  "10.0.0.0/24",
-		"AZURE_NODE_SUBNET_CIDR":           "10.0.1.0/24",
-		"CLUSTER_CIDR":                     "100.96.0.0/11",
-		"SERVICE_CIDR":                     "100.64.0.0/13",
-		"ENABLE_CEIP_PARTICIPATION":        "false",
-		"ENABLE_MHC":                       "true",
-		"IDENTITY_MANAGEMENT_TYPE":         "none",
-	}
-}
-
-// TODO: Move this to a tanzu specific lib
-func tanzuConfigToEnvVars(tanzuConfig TanzuConfig) EnvVars {
-	envVars := make(EnvVars, 0, len(tanzuConfig))
-
-	for key, value := range tanzuConfig {
-		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
-	}
-
-	return envVars
 }
