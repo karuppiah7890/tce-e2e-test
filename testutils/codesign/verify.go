@@ -41,11 +41,6 @@ func Verify(binPath string) error {
 		}
 	}
 
-	// For LinuxOS binary
-	if runtime.GOOS == "linux" {
-		// No Op as we don't have any checking to do here
-	}
-
 	return nil
 }
 
