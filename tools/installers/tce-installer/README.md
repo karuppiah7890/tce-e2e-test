@@ -4,8 +4,11 @@ Install the latest version of `tce-installer` using `go`
 
 Pre-requisite - `go` version >= `v1.17.x`
 
-```
+```bash
 go install github.com/karuppiah7890/tce-e2e-test/tools/installers/tce-installer
+
+# example
+tce-installer 0.12.1
 ```
 
 Demo YouTube videos
