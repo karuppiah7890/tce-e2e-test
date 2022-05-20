@@ -9,6 +9,7 @@ import (
 )
 
 func TestTceInstall(t *testing.T) {
+	log.InitLogger("tce-install-test")
 	version := "0.12.1"
 
 	err := tce.Install(version)

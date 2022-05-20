@@ -9,6 +9,7 @@ import (
 )
 
 func TestTfLegacyInstall(t *testing.T) {
+	log.InitLogger("tf-install-test")
 	version := "0.21.0"
 
 	err := tf.LegacyInstall(version)
