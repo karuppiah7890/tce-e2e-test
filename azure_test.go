@@ -74,7 +74,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// the cluster or cluster resources using Tanzu to be able to do this instead of encoding the pipeline
 	// metadata in the cluster name but that's a good idea too :)
 
-	azureMarketplaceImageInfoForManagementCluster := getAzureMarketplaceImageInfoForClusters(managementClusterName, utils.ManagementClusterType)
+	azureMarketplaceImageInfoForManagementCluster := getAzureMarketplaceImageInfoForCluster(managementClusterName, utils.ManagementClusterType)
 
 	// TODO: make the below function return an error and handle the error to log and exit?
 	azure.AcceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForManagementCluster...)
@@ -130,7 +130,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
 
-	azureMarketplaceImageInfoForWorkloadCluster := getAzureMarketplaceImageInfoForClusters(workloadClusterName, utils.WorkloadClusterType)
+	azureMarketplaceImageInfoForWorkloadCluster := getAzureMarketplaceImageInfoForCluster(workloadClusterName, utils.WorkloadClusterType)
 
 	// TODO: make the below function return an error and handle the error to log and exit?
 	azure.AcceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForWorkloadCluster...)
@@ -228,7 +228,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	}
 }
 
-func getAzureMarketplaceImageInfoForClusters(clusterName string, clusterType utils.ClusterType) []*capzv1beta1.AzureMarketplaceImage {
+func getAzureMarketplaceImageInfoForCluster(clusterName string, clusterType utils.ClusterType) []*capzv1beta1.AzureMarketplaceImage {
 	var clusterCreateDryRunOutputBuffer bytes.Buffer
 
 	envVars := tanzu.TanzuConfigToEnvVars(tanzu.TanzuAzureConfig(clusterName))
