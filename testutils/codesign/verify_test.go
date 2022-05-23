@@ -20,6 +20,8 @@ func TestVerify(t *testing.T) {
 		log.Fatalf("expected no error while creating temporary directory for test, but got error: %v", err)
 	}
 
+	// Below is for Darwin binaries
+
 	t.Run("binary with valid signature at a path containing space in file path", func(t *testing.T) {
 		artifactPath := filepath.Join(testDir, "tanzu-cli-darwin-amd64.tar.gz")
 		err = download.DownloadFileFromUrl("https://github.com/vmware-tanzu/tanzu-framework/releases/download/v0.21.0/tanzu-cli-darwin-amd64.tar.gz", artifactPath)
@@ -49,4 +51,9 @@ func TestVerify(t *testing.T) {
 		// TODO: verify the error message content because the error should be because of signing issues and not due
 		// to any other error
 	})
+
+
+	// TODO: Test Windows binaries - give no error for signed binary and error for unsigned binary. Check for file paths with space in the name
+
+	// TODO: Test Linux binaries - give no error. Check for file paths with space in the name
 }
