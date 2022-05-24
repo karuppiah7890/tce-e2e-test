@@ -15,6 +15,7 @@ require (
 	github.com/vmware-tanzu/tanzu-framework v0.20.0
 	github.com/vmware/govmomi v0.27.4
 	go.uber.org/zap v1.21.0
+	gopkg.in/h2non/gock.v1 v1.1.2
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8s.io/api v0.23.5
 	k8s.io/apiextensions-apiserver v0.23.4
@@ -132,6 +133,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
+	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/hashicorp/go-version v1.4.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/henvic/httpretty v0.0.6 // indirect

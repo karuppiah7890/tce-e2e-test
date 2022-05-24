@@ -11,6 +11,9 @@ import (
 func TestFetchTceRelease(t *testing.T) {
 	log.InitLogger("fetch-tce-release")
 
+	// TODO: Try to fetch draft release in one test
+
+	// v0.12.1 TCE release is a published release
 	release, err := github.FetchTceRelease("v0.12.1", os.Getenv("GITHUB_TOKEN"))
 
 	if err != nil {
