@@ -1,3 +1,11 @@
+check: compilercheck
+
+# check compilation errors for all tool code
+# and test code
+compilercheck:
+	go build -v ./...
+	go list ./... | xargs -I {} go test -v -c {}
+
 # TODO: Add target to run the E2E tests
 
 tidy:
