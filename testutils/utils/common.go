@@ -481,3 +481,17 @@ func PlatformSupportCheck() {
 		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guaranteed to work!")
 	}
 }
+
+func RunChecks() {
+	CheckTanzuCLIInstallation()
+
+	CheckTanzuClusterCLIPluginInstallation(ManagementClusterType)
+
+	CheckTanzuClusterCLIPluginInstallation(WorkloadClusterType)
+
+	docker.CheckDockerInstallation()
+
+	CheckKubectlCLIInstallation()
+
+	PlatformSupportCheck()
+}

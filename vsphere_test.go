@@ -20,7 +20,7 @@ func TestManagementAndWorkloadCluster(t *testing.T) {
 	provider := utils.VSPHERE
 	log.InitLogger(fmt.Sprintf("%s-mgmt-wkld-e2e", provider))
 
-	checks()
+	utils.RunChecks()
 
 	b := utils.CheckEnvVars(provider)
 	if b != true {

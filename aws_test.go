@@ -24,7 +24,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("aws-mgmt-wkld-e2e")
 	provider := utils.AWS
 
-	checks()
+	utils.RunChecks()
 
 	aws.CheckRequiredAwsEnvVars()
 

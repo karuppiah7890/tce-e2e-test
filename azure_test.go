@@ -11,7 +11,6 @@ import (
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
@@ -24,7 +23,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	provider := utils.AZURE
 	log.InitLogger("azure-mgmt-wkld-e2e")
 
-	checks()
+	utils.RunChecks()
 
 	azureTestSecrets := azure.ExtractAzureTestSecretsFromEnvVars()
 
@@ -246,18 +245,4 @@ func getAzureMarketplaceImageInfoForCluster(clusterName string, clusterType util
 	}
 
 	return marketplaces
-}
-
-func checks() {
-	utils.CheckTanzuCLIInstallation()
-
-	utils.CheckTanzuClusterCLIPluginInstallation(utils.ManagementClusterType)
-
-	utils.CheckTanzuClusterCLIPluginInstallation(utils.WorkloadClusterType)
-
-	docker.CheckDockerInstallation()
-
-	utils.CheckKubectlCLIInstallation()
-
-	utils.PlatformSupportCheck()
 }
