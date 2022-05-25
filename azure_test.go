@@ -176,8 +176,10 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// If all retries fail, cleanup management cluster and then cleanup workload cluster
 	utils.WaitForWorkloadClusterDeletion(workloadClusterName)
 
-	// TODO: Cleanup workload cluster kube config data (cluster, user, context)
-	// since tanzu cluster delete does not delete workload cluster kubeconfig entry
+	err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
+	if err != nil {
+		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
+	}
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
