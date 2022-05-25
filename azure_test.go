@@ -56,8 +56,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Fatalf("error while getting kubeconfig path: %v", err)
 	}
 
-	// TODO: Handle errors during deployment
-	// and cleanup management cluster
 	err = utils.RunCluster(managementClusterName, provider, utils.ManagementClusterType)
 	if err != nil {
 		runManagementClusterErr := err
@@ -107,8 +105,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	workloadClusterKubeContext := utils.GetKubeContextForTanzuCluster(workloadClusterName)
 
-	// TODO: Handle errors during deployment
-	// and cleanup management cluster and then cleanup workload cluster
 	err = utils.RunCluster(workloadClusterName, provider, utils.WorkloadClusterType)
 	if err != nil {
 		runWorkloadClusterErr := err
