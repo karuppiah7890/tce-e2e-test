@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"fmt"
-	"runtime"
 	"testing"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/aws"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 )
 
@@ -49,9 +47,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// check if kubectl is installed. This is required by tanzu CLI to apply using kubectl apply to create cluster
 	utils.CheckKubectlCLIInstallation()
 
-	if runtime.GOOS == platforms.WINDOWS {
-		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guaranteed to work!")
-	}
+	utils.PlatformSupportCheck()
 
 	// TODO: Ensure package plugin is present in case package tests are gonna be executed.
 

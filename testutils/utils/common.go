@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/aws"
@@ -15,6 +16,7 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/vsphere"
 	"k8s.io/client-go/util/homedir"
@@ -471,5 +473,11 @@ func tanzuConfig(clusterName string, infraProvider string) TanzuConfig {
 	}
 	return TanzuConfig{
 		"CLUSTER_NAME": clusterName,
+	}
+}
+
+func PlatformSupportCheck() {
+	if runtime.GOOS == platforms.WINDOWS {
+		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guaranteed to work!")
 	}
 }
