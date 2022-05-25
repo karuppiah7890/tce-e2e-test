@@ -7,7 +7,6 @@ import (
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 
-	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 )
@@ -20,30 +19,8 @@ import (
 func TestManagementAndWorkloadCluster(t *testing.T) {
 	provider := utils.VSPHERE
 	log.InitLogger(fmt.Sprintf("%s-mgmt-wkld-e2e", provider))
-	// TODO: Think about installing TCE / TF from tar ball and from source
-	// make release based on OS? Windows has make? Hmm
-	// release-dir
-	// tar ball, zip based on OS
-	// install.sh and install.bat based on OS
-	// TODO: use tce.Install("<version>")?
 
-	// Ensure TCE/TF is installed - check TCE installation or install it if not present. Or do it prior to the test run.
-	// check if tanzu is installed
-	utils.CheckTanzuCLIInstallation()
-
-	// Ensure management and workload cluster plugins are present.
-	// check if management cluster plugin is present
-	utils.CheckTanzuClusterCLIPluginInstallation(utils.ManagementClusterType)
-
-	// check if workload cluster plugin is present
-	utils.CheckTanzuClusterCLIPluginInstallation(utils.WorkloadClusterType)
-
-	// check if docker is installed. This is required by tanzu CLI I think, both docker client CLI and docker daemon
-	docker.CheckDockerInstallation()
-	// check if kubectl is installed. This is required by tanzu CLI to apply using kubectl apply to create cluster
-	utils.CheckKubectlCLIInstallation()
-
-	utils.PlatformSupportCheck()
+	checks()
 
 	b := utils.CheckEnvVars(provider)
 	if b != true {
