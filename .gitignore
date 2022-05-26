@@ -16,3 +16,6 @@
 *.exe
 
 # TODO: ignore distribution directory
+
+# golang test binaries
+*.test

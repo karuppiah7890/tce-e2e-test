@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"fmt"
-	"runtime"
 	"testing"
 	"time"
 
@@ -10,9 +9,7 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/aws"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 )
 
@@ -26,34 +23,8 @@ import (
 func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("aws-mgmt-wkld-e2e")
 	provider := utils.AWS
-	// TODO: Think about installing TCE / TF from tar ball and from source
-	// make release based on OS? Windows has make? Hmm
-	// release-dir
-	// tar ball, zip based on OS
-	// install.sh and install.bat based on OS
-	// TODO: use tce.Install("<version>")?
 
-	// Ensure TCE/TF is installed - check TCE installation or install it if not present. Or do it prior to the test run.
-	// check if tanzu is installed
-	utils.CheckTanzuCLIInstallation()
-
-	// Ensure management and workload cluster plugins are present.
-	// check if management cluster plugin is present
-	utils.CheckTanzuClusterCLIPluginInstallation(utils.ManagementClusterType)
-
-	// check if workload cluster plugin is present
-	utils.CheckTanzuClusterCLIPluginInstallation(utils.WorkloadClusterType)
-
-	// check if docker is installed. This is required by tanzu CLI I think, both docker client CLI and docker daemon
-	docker.CheckDockerInstallation()
-	// check if kubectl is installed. This is required by tanzu CLI to apply using kubectl apply to create cluster
-	utils.CheckKubectlCLIInstallation()
-
-	if runtime.GOOS == platforms.WINDOWS {
-		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guaranteed to work!")
-	}
-
-	// TODO: Ensure package plugin is present in case package tests are gonna be executed.
+	utils.RunChecks()
 
 	aws.CheckRequiredAwsEnvVars()
 

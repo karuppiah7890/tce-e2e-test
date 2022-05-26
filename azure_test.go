@@ -6,73 +6,32 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"runtime"
 	"testing"
 	"time"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 
 	capzv1beta1 "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 )
 
-// TODO: Make region as environment variable
-
-// TODO: Consider making all as environment variables. Hard coded values in test code can be default
-// We can pass env vars to override stuff
-
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	provider := utils.AZURE
 	log.InitLogger("azure-mgmt-wkld-e2e")
 
-	// Ensure TCE/TF is installed - check TCE installation or install it if not present. Or do it prior to the test run.
-	// check if tanzu is installed
-	utils.CheckTanzuCLIInstallation()
+	utils.RunChecks()
 
-	// Ensure management and workload cluster plugins are present.
-	// check if management cluster plugin is present
-	utils.CheckTanzuClusterCLIPluginInstallation(utils.ManagementClusterType)
-
-	// check if workload cluster plugin is present
-	utils.CheckTanzuClusterCLIPluginInstallation(utils.WorkloadClusterType)
-
-	// check if docker is installed. This is required by tanzu CLI I think, both docker client CLI and docker daemon
-	docker.CheckDockerInstallation()
-	// check if kubectl is installed. This is required by tanzu CLI to apply using kubectl apply to create cluster
-	utils.CheckKubectlCLIInstallation()
-
-	if runtime.GOOS == platforms.WINDOWS {
-		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guaranteed to work!")
-	}
-
-	// TODO: Ensure package plugin is present in case package tests are gonna be executed.
 	azureTestSecrets := azure.ExtractAzureTestSecretsFromEnvVars()
-
-	// Have different log levels - none/minimal, error, info, debug etc, so that we can accordingly use those in the E2E test
 
 	cred := azure.Login()
 
-	// Create random names for management and workload clusters so that we can use them to name the test clusters we are going to
-	// create. Ensure that these names are not already taken - check the resource group names to double check :) As Resource group name
-	// is based on the cluster name
-	// TODO: Create random names later, using random number or using short or long UUIDs.
-	// TODO: Do we allow users to pass the cluster name for both clusters? We could. How do we take inputs? File? Env vars? Flags?
 	clusterNameSuffix := time.Now().Unix()
 	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
 	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
-
-	// TODO: Idea - if workload cluster and management cluster name are tied to a pipeline / workflow using
-	// a unique ID, then we can use an external process to check clusters that are lying around and
-	// check corresponding pipelines / workflows and if they are finished / done / cancelled, then we can
-	// cleanup the cluster. We can also look at how we can add some sort of metadata (like labels, tags) to
-	// the cluster or cluster resources using Tanzu to be able to do this instead of encoding the pipeline
-	// metadata in the cluster name but that's a good idea too :)
 
 	azureMarketplaceImageInfoForManagementCluster := getAzureMarketplaceImageInfoForCluster(managementClusterName, utils.ManagementClusterType)
 
@@ -86,8 +45,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Fatalf("error while getting kubeconfig path: %v", err)
 	}
 
-	// TODO: Handle errors during deployment
-	// and cleanup management cluster
 	err = utils.RunCluster(managementClusterName, provider, utils.ManagementClusterType)
 	if err != nil {
 		runManagementClusterErr := err
@@ -137,8 +94,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	workloadClusterKubeContext := utils.GetKubeContextForTanzuCluster(workloadClusterName)
 
-	// TODO: Handle errors during deployment
-	// and cleanup management cluster and then cleanup workload cluster
 	err = utils.RunCluster(workloadClusterName, provider, utils.WorkloadClusterType)
 	if err != nil {
 		runWorkloadClusterErr := err
@@ -210,8 +165,10 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	// If all retries fail, cleanup management cluster and then cleanup workload cluster
 	utils.WaitForWorkloadClusterDeletion(workloadClusterName)
 
-	// TODO: Cleanup workload cluster kube config data (cluster, user, context)
-	// since tanzu cluster delete does not delete workload cluster kubeconfig entry
+	err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
+	if err != nil {
+		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
+	}
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
