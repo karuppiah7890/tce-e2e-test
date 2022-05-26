@@ -15,9 +15,13 @@ func TestConfigDeletion(t *testing.T) {
 	log.InitLogger("config-deletion")
 	tmpKubeConfigPath, _ := os.Getwd()
 
-	Copy(tmpKubeConfigPath+"/testdata/test_config", tmpKubeConfigPath+"/testdata/temp_test_config")
+	err := CopyFile(tmpKubeConfigPath+"/testdata/test_config", tmpKubeConfigPath+"/testdata/temp_test_config")
+	if err != nil {
+		os.Remove(tmpKubeConfigPath + "/testdata/temp_test_config")
+		log.Fatalf("expected no error while copying test kubeconfig to a temporary place but got error: %v", err)
+	}
 
-	err := kubeclient.DeleteContext(tmpKubeConfigPath+"/testdata/temp_test_config", "aman")
+	err = kubeclient.DeleteContext(tmpKubeConfigPath+"/testdata/temp_test_config", "aman")
 	if err == nil {
 		os.Remove(tmpKubeConfigPath + "/testdata/temp_test_config")
 		log.Fatal("expected error while deleting non-existent context but got no error")
@@ -48,7 +52,7 @@ func TestConfigDeletion(t *testing.T) {
 
 }
 
-func Copy(src, dst string) error {
+func CopyFile(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return err
