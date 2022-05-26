@@ -16,8 +16,8 @@ import (
 func TestConfigDeletion(t *testing.T) {
 	log.InitLogger("config-deletion")
 	tmpKubeConfigPath, _ := os.Getwd()
-	initialConfigFile := filepath.Join(tmpKubeConfigPath, "testdata", "test_config")
-	testConfigFile := filepath.Join(tmpKubeConfigPath, "testdata", "temp_test_config")
+	initialConfigFile := filepath.Join(tmpKubeConfigPath, "testdata", "test_config.yaml")
+	testConfigFile := filepath.Join(tmpKubeConfigPath, "testdata", "temp_test_config.yaml")
 
 	err := CopyFile(initialConfigFile, testConfigFile)
 	if err != nil {
