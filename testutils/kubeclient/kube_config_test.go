@@ -1,9 +1,11 @@
 package kubeclient_test
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -14,41 +16,45 @@ import (
 func TestConfigDeletion(t *testing.T) {
 	log.InitLogger("config-deletion")
 	tmpKubeConfigPath, _ := os.Getwd()
+	initialConfigFile := filepath.Join(tmpKubeConfigPath, "testdata", "test_config")
+	testConfigFile := filepath.Join(tmpKubeConfigPath, "testdata", "temp_test_config")
 
-	err := CopyFile(tmpKubeConfigPath+"/testdata/test_config", tmpKubeConfigPath+"/testdata/temp_test_config")
+	err := CopyFile(initialConfigFile, testConfigFile)
 	if err != nil {
-		os.Remove(tmpKubeConfigPath + "/testdata/temp_test_config")
+		os.Remove(testConfigFile)
 		log.Fatalf("expected no error while copying test kubeconfig to a temporary place but got error: %v", err)
 	}
 
-	err = kubeclient.DeleteContext(tmpKubeConfigPath+"/testdata/temp_test_config", "aman")
+	nonExistentContext := "contextDoesNotExist"
+	err = kubeclient.DeleteContext(testConfigFile, nonExistentContext)
 	if err == nil {
-		os.Remove(tmpKubeConfigPath + "/testdata/temp_test_config")
+		os.Remove(testConfigFile)
 		log.Fatal("expected error while deleting non-existent context but got no error")
 	}
 
-	if !strings.Contains(err.Error(), "could not find context named aman in kubeconfig file at path") {
+	if !strings.Contains(err.Error(), fmt.Sprintf("could not find context named %s in kubeconfig file at path", nonExistentContext)) {
 		log.Fatalf("expected error around finding non-existent context but got some other error: %v", err)
 	}
 
-	err = kubeclient.DeleteContext(tmpKubeConfigPath+"/testdata/temp_test_config", "standalone-v0.10.0-rc.3-admin@standalone-v0.10.0-rc.3")
+	existingContext := "standalone-v0.10.0-rc.3-admin@standalone-v0.10.0-rc.3"
+	err = kubeclient.DeleteContext(testConfigFile, existingContext)
 	if err != nil {
-		os.Remove(tmpKubeConfigPath + "/testdata/temp_test_config")
-		log.Fatalf("expected no error while deleting existent context but got error: %v", err)
+		os.Remove(testConfigFile)
+		log.Fatalf("expected no error while deleting existing context but got error: %v", err)
 	}
 
-	configFileData, err := ioutil.ReadFile(tmpKubeConfigPath + "/testdata/temp_test_config")
+	configFileData, err := ioutil.ReadFile(testConfigFile)
 	if err != nil {
-		os.Remove(tmpKubeConfigPath + "/testdata/temp_test_config")
+		os.Remove(testConfigFile)
 		log.Fatalf("expected no error while reading temp config file, but got error: %v", err)
 	}
 
 	if strings.Contains(string(configFileData), "standalone-v0.10.0-rc.3-admin@standalone-v0.10.0-rc.3") {
-		os.Remove(tmpKubeConfigPath + "/testdata/temp_test_config")
+		os.Remove(testConfigFile)
 		log.Fatalf("cluster context didn't delete successfully")
 	}
 
-	os.Remove(tmpKubeConfigPath + "/testdata/temp_test_config")
+	os.Remove(testConfigFile)
 
 }
 
