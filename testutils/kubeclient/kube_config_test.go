@@ -43,16 +43,16 @@ func TestConfigDeletion(t *testing.T) {
 		existingContext := "test-admin@test"
 		err := kubeclient.DeleteContext(configFilePath, existingContext)
 		if err != nil {
-			log.Fatalf("expected no error while deleting existing context but got error: %v", err)
+			log.Fatalf("expected no error while deleting existing context %v but got error: %v", existingContext, err)
 		}
 
 		configFileData, err := ioutil.ReadFile(configFilePath)
 		if err != nil {
-			log.Fatalf("expected no error while reading temp config file, but got error: %v", err)
+			log.Fatalf("expected no error while reading temp config file %v, but got error: %v", configFilePath, err)
 		}
 
-		if strings.Contains(string(configFileData), "test-admin@test") {
-			log.Fatalf("cluster context didn't delete successfully")
+		if strings.Contains(string(configFileData), existingContext) {
+			log.Fatalf("cluster context %s didn't get deleted successfully", existingContext)
 		}
 
 	})
@@ -75,7 +75,7 @@ func setupTestKubeConfigFile(initialConfigFilePath string) (string, func() error
 
 	err = CopyFile(initialConfigFilePath, configFilePath)
 	if err != nil {
-		log.Fatalf("expected no error while copying test kubeconfig to a temporary place but got error: %v", err)
+		log.Fatalf("expected no error while copying test kubeconfig file (%s) to a temporary place (%s) but got error: %v", initialConfigFilePath, configFilePath, err)
 	}
 
 	return configFilePath, cleanupFunc
