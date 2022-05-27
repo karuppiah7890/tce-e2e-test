@@ -482,6 +482,16 @@ func PlatformSupportCheck() {
 	}
 }
 
+func UpdateVars(provider, ClusterType string) {
+	if provider == "vsphere" {
+		if ClusterType == "management" {
+			os.Setenv("VSPHERE_CONTROL_PLANE_ENDPOINT", os.Getenv("VSPHERE_MANAGEMENT_CLUSTER_ENDPOINT"))
+		} else if ClusterType == "workload" {
+			os.Setenv("VSPHERE_CONTROL_PLANE_ENDPOINT", os.Getenv("VSPHERE_WORKLOAD_CLUSTER_ENDPOINT"))
+		}
+	}
+
+}
 func RunChecks() {
 	CheckTanzuCLIInstallation()
 

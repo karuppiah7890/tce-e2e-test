@@ -45,6 +45,8 @@ func TestManagementAndWorkloadCluster(t *testing.T) {
 	// the cluster or cluster resources using Tanzu to be able to do this instead of encoding the pipeline
 	// metadata in the cluster name but that's a good idea too :)
 
+	// To Update API server IP during runtime with VSPHERE_MANAGEMENT_CLUSTER_ENDPOINT to VSPHERE_CONTROL_PLANE_ENDPOINT as that is needed for cluster
+	utils.UpdateVars(provider, "management")
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster
 	err := utils.RunCluster(managementClusterName, provider, utils.ManagementClusterType)
@@ -78,7 +80,8 @@ func TestManagementAndWorkloadCluster(t *testing.T) {
 		// Should we panic here and stop?
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
-
+	// To Update API server IP during runtime with VSPHERE_WORKLOAD_CLUSTER_ENDPOINT to VSPHERE_CONTROL_PLANE_ENDPOINT as that is needed for cluster
+	utils.UpdateVars(provider, "workload")
 	// TODO: Handle errors during deployment
 	// and cleanup management cluster and then cleanup workload cluster
 	// and cleanup management cluster and then cleanup workload cluster
