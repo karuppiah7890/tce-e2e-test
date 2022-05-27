@@ -22,23 +22,11 @@ func TestConfigDeletion(t *testing.T) {
 	// TODO: Check how we can run multiple t.Run() in parallel by using t.Parallel() and making modifications to our testing
 	// logic. Currently the tests run in sequence
 	t.Run("when deleting a context that does not exist it should throw error", func(t *testing.T) {
-		configFile, err := os.CreateTemp(os.TempDir(), "test-kubeconfig-*.yaml")
-		if err != nil {
-			log.Fatalf("expected no error while creating temp file for test kubeconfig but got error: %v", err)
-		}
-		configFilePath := configFile.Name()
+		configFilePath, cleanup := setupTestKubeConfigFile(initialConfigFilePath)
+		defer cleanup()
 
-		defer func() {
-			// Cleanup file only when the test passes. When test fails, we need the file to check any problems
-			_ = os.Remove(configFilePath)
-		}()
-
-		err = CopyFile(initialConfigFilePath, configFilePath)
-		if err != nil {
-			log.Fatalf("expected no error while copying test kubeconfig to a temporary place but got error: %v", err)
-		}
 		nonExistentContext := "contextDoesNotExist"
-		err = kubeclient.DeleteContext(configFilePath, nonExistentContext)
+		err := kubeclient.DeleteContext(configFilePath, nonExistentContext)
 		if err == nil {
 			log.Fatalf("expected error while deleting non-existent context %s but got no error", nonExistentContext)
 		}
@@ -49,24 +37,11 @@ func TestConfigDeletion(t *testing.T) {
 	})
 
 	t.Run("when deleting a context that exists it should delete the context without any errors", func(t *testing.T) {
-		configFile, err := os.CreateTemp(os.TempDir(), "test-kubeconfig-*.yaml")
-		if err != nil {
-			log.Fatalf("expected no error while creating temp file for test kubeconfig but got error: %v", err)
-		}
-		configFilePath := configFile.Name()
-
-		defer func() {
-			// Cleanup file only when the test passes. When test fails, we need the file to check any problems
-			_ = os.Remove(configFilePath)
-		}()
-
-		err = CopyFile(initialConfigFilePath, configFilePath)
-		if err != nil {
-			log.Fatalf("expected no error while copying test kubeconfig to a temporary place but got error: %v", err)
-		}
+		configFilePath, cleanup := setupTestKubeConfigFile(initialConfigFilePath)
+		defer cleanup()
 
 		existingContext := "test-admin@test"
-		err = kubeclient.DeleteContext(configFilePath, existingContext)
+		err := kubeclient.DeleteContext(configFilePath, existingContext)
 		if err != nil {
 			log.Fatalf("expected no error while deleting existing context but got error: %v", err)
 		}
@@ -82,6 +57,28 @@ func TestConfigDeletion(t *testing.T) {
 
 	})
 
+}
+
+// setupTestKubeConfigFile clones the kubeconfig file at path initialConfigFilePath in OS temp directory
+func setupTestKubeConfigFile(initialConfigFilePath string) (string, func() error) {
+	configFile, err := os.CreateTemp(os.TempDir(), "test-kubeconfig-*.yaml")
+	if err != nil {
+		log.Fatalf("expected no error while creating temp file for test kubeconfig but got error: %v", err)
+	}
+
+	configFilePath := configFile.Name()
+
+	cleanupFunc := func() error {
+		// We should cleanup the file only when the test passes. When test fails, we need the file to check any problems
+		return os.Remove(configFilePath)
+	}
+
+	err = CopyFile(initialConfigFilePath, configFilePath)
+	if err != nil {
+		log.Fatalf("expected no error while copying test kubeconfig to a temporary place but got error: %v", err)
+	}
+
+	return configFilePath, cleanupFunc
 }
 
 func CopyFile(src, dst string) error {
