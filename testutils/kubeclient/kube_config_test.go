@@ -16,7 +16,7 @@ import (
 func TestConfigDeletion(t *testing.T) {
 	log.InitLogger("config-deletion")
 	tmpKubeConfigPath, _ := os.Getwd()
-	initialConfigFilePath := filepath.Join(tmpKubeConfigPath, "testdata", "test_config.yaml")
+	initialConfigFilePath := filepath.Join(tmpKubeConfigPath, "testdata", "test-kubeconfig.yaml")
 
 	// TODO: Check what t.Run() returns.
 	// TODO: Check how we can run multiple t.Run() in parallel by using t.Parallel() and making modifications to our testing
