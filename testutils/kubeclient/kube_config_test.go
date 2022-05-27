@@ -36,7 +36,7 @@ func TestConfigDeletion(t *testing.T) {
 		log.Fatalf("expected error around finding non-existent context but got some other error: %v", err)
 	}
 
-	existingContext := "standalone-v0.10.0-rc.3-admin@standalone-v0.10.0-rc.3"
+	existingContext := "test-admin@test"
 	err = kubeclient.DeleteContext(testConfigFile, existingContext)
 	if err != nil {
 		os.Remove(testConfigFile)
@@ -49,7 +49,7 @@ func TestConfigDeletion(t *testing.T) {
 		log.Fatalf("expected no error while reading temp config file, but got error: %v", err)
 	}
 
-	if strings.Contains(string(configFileData), "standalone-v0.10.0-rc.3-admin@standalone-v0.10.0-rc.3") {
+	if strings.Contains(string(configFileData), "test-admin@test") {
 		os.Remove(testConfigFile)
 		log.Fatalf("cluster context didn't delete successfully")
 	}
