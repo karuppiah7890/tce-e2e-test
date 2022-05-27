@@ -19,9 +19,8 @@ func TestConfigDeletion(t *testing.T) {
 	initialConfigFilePath := filepath.Join(tmpKubeConfigPath, "testdata", "test-kubeconfig.yaml")
 
 	// TODO: Check what t.Run() returns.
-	// TODO: Check how we can run multiple t.Run() in parallel by using t.Parallel() and making modifications to our testing
-	// logic. Currently the tests run in sequence
 	t.Run("when deleting a context that does not exist it should throw error", func(t *testing.T) {
+		t.Parallel()
 		configFilePath, cleanup := setupTestKubeConfigFile(initialConfigFilePath)
 		defer cleanup()
 
@@ -37,6 +36,7 @@ func TestConfigDeletion(t *testing.T) {
 	})
 
 	t.Run("when deleting a context that exists it should delete the context without any errors", func(t *testing.T) {
+		t.Parallel()
 		configFilePath, cleanup := setupTestKubeConfigFile(initialConfigFilePath)
 		defer cleanup()
 
