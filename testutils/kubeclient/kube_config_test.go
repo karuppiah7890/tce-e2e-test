@@ -29,6 +29,7 @@ func TestConfigDeletion(t *testing.T) {
 		configFilePath := configFile.Name()
 
 		defer func() {
+			// Cleanup file only when the test passes. When test fails, we need the file to check any problems
 			_ = os.Remove(configFilePath)
 		}()
 
@@ -55,6 +56,7 @@ func TestConfigDeletion(t *testing.T) {
 		configFilePath := configFile.Name()
 
 		defer func() {
+			// Cleanup file only when the test passes. When test fails, we need the file to check any problems
 			_ = os.Remove(configFilePath)
 		}()
 
