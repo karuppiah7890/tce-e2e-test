@@ -37,7 +37,8 @@ func TestManagementAndWorkloadCluster(t *testing.T) {
 	clusterNameSuffix := time.Now().Unix()
 	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
 	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
-
+	log.Infof("Management Cluster Name : %s", managementClusterName)
+	log.Infof("Workload Cluster Name : %s", workloadClusterName)
 	// TODO: Idea - if workload cluster and management cluster name are tied to a pipeline / workflow using
 	// a unique ID, then we can use an external process to check clusters that are lying around and
 	// check corresponding pipelines / workflows and if they are finished / done / cancelled, then we can

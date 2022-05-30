@@ -32,6 +32,8 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	clusterNameSuffix := time.Now().Unix()
 	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
 	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
+	log.Infof("Management Cluster Name : %s", managementClusterName)
+	log.Infof("Workload Cluster Name : %s", workloadClusterName)
 
 	azureMarketplaceImageInfoForManagementCluster := getAzureMarketplaceImageInfoForCluster(managementClusterName, utils.ManagementClusterType)
 
