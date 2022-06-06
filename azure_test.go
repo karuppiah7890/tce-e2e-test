@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"os"
 	"testing"
@@ -48,28 +47,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	if err != nil {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
-
-		err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
-		if err != nil {
-			log.Errorf("error while collecting diagnostics of management cluster: %v", err)
-		}
-
-		err = utils.CleanupDockerBootstrapCluster(managementClusterName)
-		if err != nil {
-			log.Errorf("error while cleaning up docker bootstrap cluster of the management cluster: %v", err)
-		}
-
-		err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
-		if err != nil {
-			log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
-		}
-
-		// TODO: Move this to a function named as cleanup azure cluster?
-		err = azure.DeleteResourceGroup(context.TODO(), managementClusterName, azureTestSecrets.SubscriptionID, cred)
-		if err != nil {
-			log.Errorf("error while cleaning up azure resource group of the management cluster which has all the management cluster resources: %v", err)
-		}
-
+		utils.ManagementClusterFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext, azureTestSecrets, cred)
 		log.Fatal("Summary: error while running management cluster: %v", runManagementClusterErr)
 	}
 
@@ -98,32 +76,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		runWorkloadClusterErr := err
 		log.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
 
-		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider)
-		if err != nil {
-			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
-		}
-
-		// TODO: Move this to a function named as cleanup azure cluster?
-		err = azure.DeleteResourceGroup(context.TODO(), managementClusterName, azureTestSecrets.SubscriptionID, cred)
-		if err != nil {
-			log.Errorf("error while cleaning up azure resource group of the management cluster which has all the management cluster resources: %v", err)
-		}
-
-		err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
-		if err != nil {
-			log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
-		}
-
-		// TODO: Move this to a function named as cleanup azure cluster?
-		err = azure.DeleteResourceGroup(context.TODO(), workloadClusterName, azureTestSecrets.SubscriptionID, cred)
-		if err != nil {
-			log.Errorf("error while cleaning up azure resource group of the workload cluster which has all the workload cluster resources: %v", err)
-		}
-
-		err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
-		if err != nil {
-			log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
-		}
+		utils.WorkloadClusterFailureTasks(managementClusterName, workloadClusterName, provider, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext, azureTestSecrets, cred)
 
 		log.Fatal("error while running workload cluster: %v", runWorkloadClusterErr)
 	}
