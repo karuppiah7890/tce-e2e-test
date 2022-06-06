@@ -29,9 +29,8 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	cred := azure.Login()
 
-	clusterNameSuffix := time.Now().Unix()
-	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
-	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
+	managementClusterName, workloadClusterName := getClusterNames()
+
 	log.Infof("Management Cluster Name : %s", managementClusterName)
 	log.Infof("Workload Cluster Name : %s", workloadClusterName)
 
@@ -247,4 +246,11 @@ func getAzureMarketplaceImageInfoForCluster(clusterName string, clusterType util
 	}
 
 	return marketplaces
+}
+
+func getClusterNames() (string, string) {
+	clusterNameSuffix := time.Now().Unix()
+	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
+	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
+	return managementClusterName, workloadClusterName
 }

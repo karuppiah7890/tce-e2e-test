@@ -3,7 +3,6 @@ package e2e
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 
@@ -34,9 +33,8 @@ func TestManagementAndWorkloadCluster(t *testing.T) {
 	// is based on the cluster name
 	// TODO: Create random names later, using random number or using short or long UUIDs.
 	// TODO: Do we allow users to pass the cluster name for both clusters? We could. How do we take inputs? File? Env vars? Flags?
-	clusterNameSuffix := time.Now().Unix()
-	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
-	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
+	managementClusterName, workloadClusterName := getClusterNames()
+
 	log.Infof("Management Cluster Name : %s", managementClusterName)
 	log.Infof("Workload Cluster Name : %s", workloadClusterName)
 	// TODO: Idea - if workload cluster and management cluster name are tied to a pipeline / workflow using
