@@ -33,7 +33,7 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// is based on the cluster name
 	// TODO: Create random names later, using random number or using short or long UUIDs.
 	// TODO: Do we allow users to pass the cluster name for both clusters? We could. How do we take inputs? File? Env vars? Flags?
-	managementClusterName, workloadClusterName := getClusterNames()
+	managementClusterName, workloadClusterName := utils.GetRandomClusterNames()
 
 	log.Infof("Management Cluster Name : %s", managementClusterName)
 	log.Infof("Workload Cluster Name : %s", workloadClusterName)

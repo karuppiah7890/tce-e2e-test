@@ -492,6 +492,7 @@ func UpdateVars(provider, ClusterType string) {
 	}
 
 }
+
 func RunChecks() {
 	CheckTanzuCLIInstallation()
 
@@ -504,4 +505,11 @@ func RunChecks() {
 	CheckKubectlCLIInstallation()
 
 	PlatformSupportCheck()
+}
+
+func GetRandomClusterNames() (string, string) {
+	clusterNameSuffix := time.Now().Unix()
+	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
+	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
+	return managementClusterName, workloadClusterName
 }

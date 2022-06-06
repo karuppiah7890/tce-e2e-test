@@ -3,11 +3,9 @@ package e2e
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
@@ -29,7 +27,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	cred := azure.Login()
 
-	managementClusterName, workloadClusterName := getClusterNames()
+	managementClusterName, workloadClusterName := utils.GetRandomClusterNames()
 
 	log.Infof("Management Cluster Name : %s", managementClusterName)
 	log.Infof("Workload Cluster Name : %s", workloadClusterName)
@@ -246,11 +244,4 @@ func getAzureMarketplaceImageInfoForCluster(clusterName string, clusterType util
 	}
 
 	return marketplaces
-}
-
-func getClusterNames() (string, string) {
-	clusterNameSuffix := time.Now().Unix()
-	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
-	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
-	return managementClusterName, workloadClusterName
 }
