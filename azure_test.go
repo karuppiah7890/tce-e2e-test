@@ -1,21 +1,15 @@
 package e2e
 
 import (
-	"bytes"
 	"context"
-	"io"
-	"os"
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
-
-	capzv1beta1 "sigs.k8s.io/cluster-api-provider-azure/api/v1beta1"
 )
 
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
@@ -35,7 +29,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	log.Infof("Management Cluster Name : %s", managementClusterName)
 	log.Infof("Workload Cluster Name : %s", workloadClusterName)
 
-	azureMarketplaceImageInfoForManagementCluster := getAzureMarketplaceImageInfoForCluster(managementClusterName, utils.ManagementClusterType)
+	azureMarketplaceImageInfoForManagementCluster := azure.GetAzureMarketplaceImageInfoForCluster(managementClusterName, utils.ManagementClusterType)
 
 	// TODO: make the below function return an error and handle the error to log and exit?
 	azure.AcceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForManagementCluster...)
@@ -68,7 +62,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
 
-	azureMarketplaceImageInfoForWorkloadCluster := getAzureMarketplaceImageInfoForCluster(workloadClusterName, utils.WorkloadClusterType)
+	azureMarketplaceImageInfoForWorkloadCluster := azure.GetAzureMarketplaceImageInfoForCluster(workloadClusterName, utils.WorkloadClusterType)
 
 	// TODO: make the below function return an error and handle the error to log and exit?
 	azure.AcceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForWorkloadCluster...)
@@ -139,69 +133,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 		log.Fatal("error while deleting management cluster: %v", err)
 	}
-}
-
-// TODO: Move this to azure package
-func getAzureMarketplaceImageInfoForCluster(clusterName string, clusterType utils.ClusterType) []*capzv1beta1.AzureMarketplaceImage {
-	var clusterCreateDryRunOutputBuffer bytes.Buffer
-
-	envVars := tanzu.TanzuConfigToEnvVars(tanzu.TanzuAzureConfig(clusterName))
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		Name: "tanzu",
-		Args: []string{
-			clusterType.TanzuCommand(),
-			"create",
-			clusterName,
-			"--dry-run",
-			// TODO: Should we add verbosity flag and value by default? or
-			// let the user define the verbosity when running the tests maybe?
-			// "-v",
-			// "10",
-		},
-		Env: append(os.Environ(), envVars...),
-		// TODO: Do we really want to output to log.InfoWriter ? Is this
-		// data necessary in the logs? This data will contain secrets but for now we haven't masked secrets
-		// in logs, also, even if we mask secrets, is this data useful and necessary?
-		// The data in log can help development but that's all
-		Stdout: &clusterCreateDryRunOutputBuffer,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		// TODO: Do we really want to output to log.ErrorWriter ? Is this
-		// data necessary in the logs? This data will contain secrets but for now we haven't masked secrets
-		// in logs, also, even if we mask secrets, is this data useful and necessary?
-		// The data in log can help development and also
-		// during actual runs to check if there are any errors from the command, hmm
-		Stderr: log.ErrorWriter,
-	})
-
-	if err != nil {
-		log.Fatalf("Error occurred while running %v dry run. Exit code: %v. Error: %v", clusterName, exitCode, err)
-	}
-
-	clusterCreateDryRunOutput, err := io.ReadAll(&clusterCreateDryRunOutputBuffer)
-	if err != nil {
-		// TODO: Should we print the whole command as part of the error?
-		log.Fatalf("Error occurred while reading output of %v create dry run: %v", clusterName, err)
-	}
-
-	objects := azure.ParseK8sYamlAndFetchAzureMachineTemplates(clusterCreateDryRunOutput)
-
-	marketplaces := []*capzv1beta1.AzureMarketplaceImage{}
-
-	for _, object := range objects {
-		azureMachineTemplate, ok := object.(*capzv1beta1.AzureMachineTemplate)
-		if !ok {
-			log.Fatalf("Error occurred while parsing output of %v create dry run", clusterName)
-		}
-
-		marketplaces = append(marketplaces, azureMachineTemplate.Spec.Template.Spec.Image.Marketplace)
-	}
-
-	return marketplaces
 }
 
 // TODO: Move this to azure package / azure specific package
