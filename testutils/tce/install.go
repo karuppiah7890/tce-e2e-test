@@ -21,7 +21,7 @@ const BAT = "bat"
 
 // TODO: Should we support getTceArtifactUrl("v0.11.0") too? Or just have one of them? Which one?
 // Example: getTceArtifactUrl("0.11.0")
-func getTceArtifactUrl(version string) (string, error) {
+func getTceArtifactUrl(version, buildType string) (string, error) {
 	log.Infof("Getting TCE artifact URL for version %s", version)
 
 	// TODO: Convert magic strings like "linux/amd64", "darwin/amd64", "windows/amd64" to constants
@@ -41,14 +41,19 @@ func getTceArtifactUrl(version string) (string, error) {
 
 	artifactExtension := artifactExtensions[operatingSystem]
 	// Example: https://github.com/vmware-tanzu/community-edition/releases/download/v0.11.0/tce-darwin-amd64-v0.11.0.tar.gz
+	// Example: https://storage.googleapis.com/tce-cli-plugins-staging/build-daily/2022-06-06/tce-darwin-amd64-v0.13.0-dev.1.tar.gz
+	if buildType == "daily" {
+		lastbuild := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+		return fmt.Sprintf("https://storage.googleapis.com/tce-cli-plugins-staging/build-daily/%s/tce-%s-%s-v%s.%s", lastbuild, operatingSystem, architecture, version, artifactExtension), nil
+	}
 	return fmt.Sprintf("https://github.com/vmware-tanzu/community-edition/releases/download/v%s/tce-%s-%s-v%s.%s", version, operatingSystem, architecture, version, artifactExtension), nil
 }
 
 // TODO: Should we support Install("v0.11.0") too? Or just have one of them? Which one?
 // Example: Install("0.11.0")
-func Install(version string) error {
+func Install(version, buildType string) error {
 	log.Infof("Starting install of TCE version %s", version)
-	artifactUrl, err := getTceArtifactUrl(version)
+	artifactUrl, err := getTceArtifactUrl(version, buildType)
 	if err != nil {
 		return fmt.Errorf("error getting TCE artifact URL: %v", err)
 	}

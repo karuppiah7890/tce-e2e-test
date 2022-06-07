@@ -1,8 +1,7 @@
 package main
 
 import (
-	"os"
-
+	"flag"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tce"
 )
@@ -26,15 +25,19 @@ import (
 // like `--uninstall` or similar
 
 func main() {
+	buildType := flag.String("t", "stable", "")
+	version := flag.String("v", "0.12.1", "Provide Stable Version")
+	flag.Parse()
 	log.InitLogger("tce-install")
 	// TODO: Get version from flags (--version) or arguments
 
-	if len(os.Args) != 2 {
-		log.Fatal("Provide exactly one argument with Tanzu Community Edition (TCE) version. Example Usage: tce-installer 0.12.1")
-	}
+	//if len(os.Args) != 2 {
+	//	log.Fatal("Provide exactly one argument with Tanzu Community Edition (TCE) version. Example Usage: tce-installer 0.12.1")
+	//}
+	//
+	//version := os.Args[1]
 
-	version := os.Args[1]
-	err := tce.Install(version)
+	err := tce.Install(*version, *buildType)
 	if err != nil {
 		log.Fatalf("error occurred while installing TCE version %s: %v", version, err)
 	}
