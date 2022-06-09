@@ -29,10 +29,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	log.Infof("Management Cluster Name : %s", managementClusterName)
 	log.Infof("Workload Cluster Name : %s", workloadClusterName)
 
-	azureMarketplaceImageInfoForManagementCluster := azure.GetAzureMarketplaceImageInfoForCluster(managementClusterName, utils.ManagementClusterType)
-
-	// TODO: make the below function return an error and handle the error to log and exit?
-	azure.AcceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForManagementCluster...)
+	preClusterCreationTasks(managementClusterName, utils.ManagementClusterType, azureTestSecrets.SubscriptionID, cred)
 
 	managementClusterKubeContext := utils.GetKubeContextForTanzuCluster(managementClusterName)
 	kubeConfigPath, err := utils.GetKubeConfigPath()
@@ -62,10 +59,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
 
-	azureMarketplaceImageInfoForWorkloadCluster := azure.GetAzureMarketplaceImageInfoForCluster(workloadClusterName, utils.WorkloadClusterType)
-
-	// TODO: make the below function return an error and handle the error to log and exit?
-	azure.AcceptAzureImageLicenses(azureTestSecrets.SubscriptionID, cred, azureMarketplaceImageInfoForWorkloadCluster...)
+	preClusterCreationTasks(workloadClusterName, utils.WorkloadClusterType, azureTestSecrets.SubscriptionID, cred)
 
 	workloadClusterKubeContext := utils.GetKubeContextForTanzuCluster(workloadClusterName)
 
@@ -187,4 +181,11 @@ func WorkloadClusterFailureTasks(managementClusterName, workloadClusterName, pro
 	if err != nil {
 		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 	}
+}
+
+func preClusterCreationTasks(clusterName string, clusterType utils.ClusterType, subscriptionID string, cred *azidentity.ClientSecretCredential) {
+	azureMarketplaceImageInfoForCluster := azure.GetAzureMarketplaceImageInfoForCluster(clusterName, clusterType)
+
+	// TODO: make the below function return an error and handle the error to log and exit?
+	azure.AcceptAzureImageLicenses(subscriptionID, cred, azureMarketplaceImageInfoForCluster...)
 }
