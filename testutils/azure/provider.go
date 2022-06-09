@@ -12,7 +12,7 @@ func (provider Provider) CheckRequiredEnvVars() bool {
 }
 
 func (provider Provider) Name() string {
-	return "aws"
+	return "azure"
 }
 
 // TODO: Change name?
