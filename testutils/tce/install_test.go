@@ -12,7 +12,7 @@ func TestTceInstall(t *testing.T) {
 	log.InitLogger("tce-install-test")
 	version := "0.12.1"
 
-	err := tce.Install(version)
+	err := tce.Install(version, "")
 	if err != nil {
 		log.Fatalf("error occurred while installing TCE version %s: %v", version, err)
 	}
