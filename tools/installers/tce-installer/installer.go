@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tce"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 )
 
 // Different ways to install TCE. Same / Similar applies to TF too
@@ -31,14 +32,14 @@ func main() {
 	log.InitLogger("tce-install")
 	// TODO: Get version from flags (--version) or arguments
 
-	//if len(os.Args) != 2 {
-	//	log.Fatal("Provide exactly one argument with Tanzu Community Edition (TCE) version. Example Usage: tce-installer 0.12.1")
-	//}
-	//
-	//version := os.Args[1]
-
-	err := tce.Install(*version, *buildType)
+	err := utils.CheckTanzuCLIInstallation()
 	if err != nil {
-		log.Fatalf("error occurred while installing TCE version %s: %v", version, err)
+		log.Info("tanzu CLI is not installed")
+		err = tce.Install(*version, *buildType)
+		if err != nil {
+			log.Fatalf("error occurred while installing TCE version %s: %v", version, err)
+		}
+	} else {
+		log.Infof("Tanzu ClI already installed Please uninstall it and then install")
 	}
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -414,6 +415,104 @@ func DeleteVM(client *vim25.Client, vmName string) error {
 	if err = task.Wait(ctx); err != nil {
 		return err
 	}
+	return nil
+}
+
+// Can be used for dynamic resource pool deletion
+// To be tested
+func DeleteResourcePool(client *vim25.Client, ResourcePool string) error {
+	finder := find.NewFinder(client)
+	rp, err := finder.ResourcePool(context.TODO(), ResourcePool)
+	if err != nil {
+		if _, ok := err.(*find.NotFoundError); ok {
+			log.Errorf("Unable To find Resource Pool")
+			return err
+		}
+	}
+	var (
+		task *object.Task
+	)
+
+	task, err = rp.Destroy(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err = task.Wait(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Can be used for dynamic resource pool creation
+// To be tested
+func CreateResourcePool(client *vim25.Client, ResourcePool string) error {
+	dir := path.Dir(ResourcePool)
+	base := path.Base(ResourcePool)
+	finder := find.NewFinder(client)
+	resourcePools, err := finder.ResourcePoolList(ctx, dir)
+	if err != nil {
+		if _, ok := err.(*find.NotFoundError); ok {
+			return fmt.Errorf("cannot create resource pool '%s': parent not found", base)
+		}
+		return err
+	}
+	// To Run and check
+	var state types.ResourceConfigSpec
+	for _, parent := range resourcePools {
+		_, err = parent.Create(ctx, base, state)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Can be used for dynamic folder creation
+// To be tested
+func CreateFolder(client *vim25.Client, folderName string) error {
+	dir := path.Dir(folderName)
+	base := path.Base(folderName)
+	if dir == "" {
+		dir = "/"
+	}
+	finder := find.NewFinder(client)
+	folder, err := finder.Folder(ctx, dir)
+	if err != nil {
+		if _, ok := err.(*find.NotFoundError); ok {
+			return fmt.Errorf("cannot create folder '%s': parent not found", base)
+		}
+		return err
+	}
+	_, err = folder.CreateFolder(ctx, base)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Can be used for dynamic folder Deletion
+// To be tested
+func DeleteFolder(client *vim25.Client, folderName string) error {
+	dir := path.Dir(folderName)
+	base := path.Base(folderName)
+	if dir == "" {
+		dir = "/"
+	}
+	finder := find.NewFinder(client)
+	folder, err := finder.Folder(ctx, dir)
+	if err != nil {
+		if _, ok := err.(*find.NotFoundError); ok {
+			return fmt.Errorf("cannot create resource pool '%s': parent not found", base)
+		}
+		return err
+	}
+	_, err = folder.Destroy(ctx)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -26,9 +26,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	managementClusterName, workloadClusterName := utils.GetRandomClusterNames()
 
-	log.Infof("Management Cluster Name : %s", managementClusterName)
-	log.Infof("Workload Cluster Name : %s", workloadClusterName)
-
 	preClusterCreationTasks(managementClusterName, utils.ManagementClusterType, azureTestSecrets.SubscriptionID, cred)
 
 	managementClusterKubeContext := utils.GetKubeContextForTanzuCluster(managementClusterName)

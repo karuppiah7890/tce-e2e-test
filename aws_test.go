@@ -35,9 +35,6 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	// TODO: Do we allow users to pass the cluster name for both clusters? We could. How do we take inputs? File? Env vars? Flags?
 	managementClusterName, workloadClusterName := utils.GetRandomClusterNames()
 
-	log.Infof("Management Cluster Name : %s", managementClusterName)
-	log.Infof("Workload Cluster Name : %s", workloadClusterName)
-
 	// TODO: Idea - if workload cluster and management cluster name are tied to a pipeline / workflow using
 	// a unique ID, then we can use an external process to check clusters that are lying around and
 	// check corresponding pipelines / workflows and if they are finished / done / cancelled, then we can

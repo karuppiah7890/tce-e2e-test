@@ -59,13 +59,15 @@ func (clusterType ClusterType) TanzuCommand() string {
 	return clusterType.Name
 }
 
-func CheckTanzuCLIInstallation() {
+func CheckTanzuCLIInstallation() error {
 	log.Info("Checking tanzu CLI installation")
 	path, err := exec.LookPath("tanzu")
 	if err != nil {
 		log.Fatalf("tanzu CLI is not installed")
+		return err
 	}
-	log.Infof("tanzu CLI is available at path: %s\n", path)
+	log.Infof("tanzu CLI is available at path: %s", path)
+	return nil
 }
 
 func CheckKubectlCLIInstallation() {
@@ -222,6 +224,25 @@ func PrintClusterInformation(kubeConfigPath string, kubeContext string) error {
 	}
 
 	return nil
+}
+
+func GetClusterNodes(kubeConfigPath string, kubeContext string) ([]string, error) {
+	nodesName := []string{}
+	client, err := kubeclient.GetKubeClient(kubeConfigPath, kubeContext)
+	if err != nil {
+		return nil, fmt.Errorf("error getting kube client: %v", err)
+	}
+	nodes, err := client.GetAllNodes()
+	if err != nil {
+		return nil, fmt.Errorf("error getting all nodes: %v", err)
+	}
+
+	for _, node := range nodes.Items {
+		// TODO: There is some issue here, node.Status.Phase gives empty string I think
+		log.Infof("%s\t%s", node.Name, node.Status.Phase)
+		nodesName = append(nodesName, node.Name)
+	}
+	return nodesName, nil
 }
 
 func CheckWorkloadClusterIsRunning(workloadClusterName string) {
@@ -490,7 +511,7 @@ func UpdateVars(provider, ClusterType string) {
 }
 
 func RunChecks() {
-	CheckTanzuCLIInstallation()
+	_ = CheckTanzuCLIInstallation()
 
 	CheckTanzuClusterCLIPluginInstallation(ManagementClusterType)
 
@@ -507,5 +528,7 @@ func GetRandomClusterNames() (string, string) {
 	clusterNameSuffix := time.Now().Unix()
 	managementClusterName := fmt.Sprintf("test-mgmt-%d", clusterNameSuffix)
 	workloadClusterName := fmt.Sprintf("test-wkld-%d", clusterNameSuffix)
+	log.Infof("Management Cluster Name : %s", managementClusterName)
+	log.Infof("Workload Cluster Name : %s", workloadClusterName)
 	return managementClusterName, workloadClusterName
 }
