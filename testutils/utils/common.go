@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -531,4 +532,26 @@ func GetRandomClusterNames() (string, string) {
 	log.Infof("Management Cluster Name : %s", managementClusterName)
 	log.Infof("Workload Cluster Name : %s", workloadClusterName)
 	return managementClusterName, workloadClusterName
+}
+
+func ManagementClusterFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext string, provider Provider) {
+	err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
+	if err != nil {
+		log.Errorf("error while collecting diagnostics of management cluster: %v", err)
+	}
+
+	err = CleanupDockerBootstrapCluster(managementClusterName)
+	if err != nil {
+		log.Errorf("error while cleaning up docker bootstrap cluster of the management cluster: %v", err)
+	}
+
+	err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
+	if err != nil {
+		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
+	}
+
+	err = provider.CleanupCluster(context.TODO(), managementClusterName)
+	if err != nil {
+		log.Errorf("error while cleaning up the management cluster: %v", err)
+	}
 }

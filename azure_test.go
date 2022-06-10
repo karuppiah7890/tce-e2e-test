@@ -36,7 +36,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	if err != nil {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
-		ManagementClusterFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext, azure.PROVIDER)
+		utils.ManagementClusterFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext, azure.PROVIDER)
 		log.Fatal("Summary: error while running management cluster: %v", runManagementClusterErr)
 	}
 
@@ -117,29 +117,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		}
 
 		log.Fatal("error while deleting management cluster: %v", err)
-	}
-}
-
-// TODO: Move this to azure package / azure specific package
-func ManagementClusterFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext string, provider utils.Provider) {
-	err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
-	if err != nil {
-		log.Errorf("error while collecting diagnostics of management cluster: %v", err)
-	}
-
-	err = utils.CleanupDockerBootstrapCluster(managementClusterName)
-	if err != nil {
-		log.Errorf("error while cleaning up docker bootstrap cluster of the management cluster: %v", err)
-	}
-
-	err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
-	if err != nil {
-		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
-	}
-
-	err = provider.CleanupCluster(context.TODO(), managementClusterName)
-	if err != nil {
-		log.Errorf("error while cleaning up azure resource group of the management cluster which has all the management cluster resources: %v", err)
 	}
 }
 
