@@ -20,13 +20,15 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	azure.PROVIDER.CheckRequiredEnvVars()
 
+	azure.PROVIDER.Init()
+
 	azureTestSecrets := azure.ExtractAzureTestSecretsFromEnvVars()
 
 	cred := azure.Login()
 
 	managementClusterName, workloadClusterName := utils.GetRandomClusterNames()
 
-	preClusterCreationTasks(managementClusterName, utils.ManagementClusterType, azureTestSecrets.SubscriptionID, cred)
+	azure.PROVIDER.PreClusterCreationTasks(managementClusterName, utils.ManagementClusterType)
 
 	managementClusterKubeContext := utils.GetKubeContextForTanzuCluster(managementClusterName)
 	kubeConfigPath, err := utils.GetKubeConfigPath()
@@ -43,9 +45,6 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Fatal("Summary: error while running management cluster: %v", runManagementClusterErr)
 	}
 
-	// TODO: check if management cluster is running by doing something similar to
-	// `tanzu management-cluster get | grep "${MANAGEMENT_CLUSTER_NAME}" | grep running`
-
 	// TODO: Handle errors
 	utils.GetClusterKubeConfig(managementClusterName, provider, utils.ManagementClusterType)
 
@@ -56,7 +55,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
 
-	preClusterCreationTasks(workloadClusterName, utils.WorkloadClusterType, azureTestSecrets.SubscriptionID, cred)
+	azure.PROVIDER.PreClusterCreationTasks(workloadClusterName, utils.WorkloadClusterType)
 
 	workloadClusterKubeContext := utils.GetKubeContextForTanzuCluster(workloadClusterName)
 
@@ -178,11 +177,4 @@ func WorkloadClusterFailureTasks(managementClusterName, workloadClusterName, pro
 	if err != nil {
 		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 	}
-}
-
-func preClusterCreationTasks(clusterName string, clusterType utils.ClusterType, subscriptionID string, cred *azidentity.ClientSecretCredential) {
-	azureMarketplaceImageInfoForCluster := azure.GetAzureMarketplaceImageInfoForCluster(clusterName, clusterType)
-
-	// TODO: make the below function return an error and handle the error to log and exit?
-	azure.AcceptAzureImageLicenses(subscriptionID, cred, azureMarketplaceImageInfoForCluster...)
 }

@@ -11,6 +11,8 @@ const Docker = "docker"
 // TODO: Change name?
 type Provider interface {
 	Name() string
+	Init() error
 	// TODO: Change CheckRequiredEnvVars to GetListOfRequiredEnvVars ? And do check in a common manner?
 	CheckRequiredEnvVars() bool
+	PreClusterCreationTasks(clusterName string, clusterType ClusterType) error
 }
