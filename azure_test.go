@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"context"
 	"testing"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
@@ -35,7 +36,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	if err != nil {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
-		utils.ManagementClusterCreationFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext, azure.PROVIDER)
+		utils.ManagementClusterCreationFailureTasks(context.TODO(), managementClusterName, kubeConfigPath, managementClusterKubeContext, azure.PROVIDER)
 		log.Fatal("Summary: error while running management cluster: %v", runManagementClusterErr)
 	}
 

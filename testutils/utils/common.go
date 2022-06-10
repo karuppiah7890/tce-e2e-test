@@ -534,7 +534,7 @@ func GetRandomClusterNames() (string, string) {
 	return managementClusterName, workloadClusterName
 }
 
-func ManagementClusterCreationFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext string, provider Provider) {
+func ManagementClusterCreationFailureTasks(ctx context.Context, managementClusterName, kubeConfigPath, managementClusterKubeContext string, provider Provider) {
 	err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
 	if err != nil {
 		log.Errorf("error while collecting diagnostics of management cluster: %v", err)
@@ -550,7 +550,7 @@ func ManagementClusterCreationFailureTasks(managementClusterName, kubeConfigPath
 		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 	}
 
-	err = provider.CleanupCluster(context.TODO(), managementClusterName)
+	err = provider.CleanupCluster(ctx, managementClusterName)
 	if err != nil {
 		log.Errorf("error while cleaning up the management cluster: %v", err)
 	}
