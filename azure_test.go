@@ -36,7 +36,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	if err != nil {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
-		utils.ManagementClusterFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext, azure.PROVIDER)
+		utils.ManagementClusterCreationFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext, azure.PROVIDER)
 		log.Fatal("Summary: error while running management cluster: %v", runManagementClusterErr)
 	}
 

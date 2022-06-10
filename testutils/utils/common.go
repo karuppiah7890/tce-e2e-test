@@ -534,7 +534,7 @@ func GetRandomClusterNames() (string, string) {
 	return managementClusterName, workloadClusterName
 }
 
-func ManagementClusterFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext string, provider Provider) {
+func ManagementClusterCreationFailureTasks(managementClusterName, kubeConfigPath, managementClusterKubeContext string, provider Provider) {
 	err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
 	if err != nil {
 		log.Errorf("error while collecting diagnostics of management cluster: %v", err)
