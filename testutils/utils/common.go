@@ -556,7 +556,7 @@ func ManagementClusterCreationFailureTasks(managementClusterName, kubeConfigPath
 	}
 }
 
-func WorkloadClusterFailureTasks(managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext string, provider Provider) {
+func WorkloadClusterCreationFailureTasks(managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext string, provider Provider) {
 	err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider.Name())
 	if err != nil {
 		log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
