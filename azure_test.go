@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"context"
 	"testing"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/azure"
@@ -59,7 +58,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		runWorkloadClusterErr := err
 		log.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
 
-		WorkloadClusterFailureTasks(managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext, azure.PROVIDER)
+		utils.WorkloadClusterFailureTasks(managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext, azure.PROVIDER)
 
 		log.Fatal("error while running workload cluster: %v", runWorkloadClusterErr)
 	}
@@ -117,33 +116,5 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		}
 
 		log.Fatal("error while deleting management cluster: %v", err)
-	}
-}
-
-// TODO: Move this to azure package / azure specific package
-func WorkloadClusterFailureTasks(managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext string, provider utils.Provider) {
-	err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider.Name())
-	if err != nil {
-		log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
-	}
-
-	err = provider.CleanupCluster(context.TODO(), managementClusterName)
-	if err != nil {
-		log.Errorf("error while cleaning up azure resource group of the management cluster which has all the management cluster resources: %v", err)
-	}
-
-	err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
-	if err != nil {
-		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
-	}
-
-	err = provider.CleanupCluster(context.TODO(), workloadClusterName)
-	if err != nil {
-		log.Errorf("error while cleaning up azure resource group of the workload cluster which has all the workload cluster resources: %v", err)
-	}
-
-	err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
-	if err != nil {
-		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 	}
 }

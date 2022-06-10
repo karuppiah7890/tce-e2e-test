@@ -555,3 +555,30 @@ func ManagementClusterCreationFailureTasks(managementClusterName, kubeConfigPath
 		log.Errorf("error while cleaning up the management cluster: %v", err)
 	}
 }
+
+func WorkloadClusterFailureTasks(managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext string, provider Provider) {
+	err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider.Name())
+	if err != nil {
+		log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
+	}
+
+	err = provider.CleanupCluster(context.TODO(), managementClusterName)
+	if err != nil {
+		log.Errorf("error while cleaning up the management cluster: %v", err)
+	}
+
+	err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
+	if err != nil {
+		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
+	}
+
+	err = provider.CleanupCluster(context.TODO(), workloadClusterName)
+	if err != nil {
+		log.Errorf("error while cleaning up the workload cluster: %v", err)
+	}
+
+	err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
+	if err != nil {
+		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
+	}
+}
