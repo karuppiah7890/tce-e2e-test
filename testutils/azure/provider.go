@@ -41,7 +41,7 @@ func (provider *Provider) PreClusterCreationTasks(clusterName string, clusterTyp
 }
 
 func (provider *Provider) CleanupCluster(ctx context.Context, clusterName string) error {
-	err := DeleteResourceGroup(context.TODO(), clusterName, provider.testSecrets.SubscriptionID, provider.cred)
+	err := DeleteResourceGroup(ctx, clusterName, provider.testSecrets.SubscriptionID, provider.cred)
 	if err != nil {
 		return fmt.Errorf("error while cleaning up azure resource group of the cluster which has all the cluster resources: %v", err)
 	}
