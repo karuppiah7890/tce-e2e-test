@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/karuppiah7890/tce-e2e-test/testutils/aws"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
@@ -43,9 +42,6 @@ var WorkloadClusterType = ClusterType{Name: "cluster"}
 
 func CheckEnvVars(provider string) bool {
 	switch provider {
-	case "aws":
-		aws.CheckRequiredAwsEnvVars()
-		return true
 	case "vsphere":
 		vsphere.CheckRequiredVsphereEnvVars()
 		return true
