@@ -12,9 +12,12 @@ import (
 )
 
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
-	provider := utils.AZURE
 	log.InitLogger("azure-mgmt-wkld-e2e")
 
+	runProviderTest()
+}
+
+func runProviderTest() {
 	utils.RunChecks()
 
 	azure.PROVIDER.CheckRequiredEnvVars()
@@ -32,7 +35,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 		log.Fatalf("error while getting kubeconfig path: %v", err)
 	}
 
-	err = utils.RunCluster(managementClusterName, provider, utils.ManagementClusterType)
+	err = utils.RunCluster(managementClusterName, azure.PROVIDER.Name(), utils.ManagementClusterType)
 	if err != nil {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
@@ -41,7 +44,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	}
 
 	// TODO: Handle errors
-	utils.GetClusterKubeConfig(managementClusterName, provider, utils.ManagementClusterType)
+	utils.GetClusterKubeConfig(managementClusterName, azure.PROVIDER.Name(), utils.ManagementClusterType)
 
 	log.Infof("Management Cluster %s Information: ", managementClusterName)
 	err = utils.PrintClusterInformation(kubeConfigPath, managementClusterKubeContext)
@@ -54,7 +57,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	workloadClusterKubeContext := utils.GetKubeContextForTanzuCluster(workloadClusterName)
 
-	err = utils.RunCluster(workloadClusterName, provider, utils.WorkloadClusterType)
+	err = utils.RunCluster(workloadClusterName, azure.PROVIDER.Name(), utils.WorkloadClusterType)
 	if err != nil {
 		runWorkloadClusterErr := err
 		log.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
@@ -67,7 +70,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	utils.CheckWorkloadClusterIsRunning(workloadClusterName)
 
 	// TODO: Handle errors
-	utils.GetClusterKubeConfig(workloadClusterName, provider, utils.WorkloadClusterType)
+	utils.GetClusterKubeConfig(workloadClusterName, azure.PROVIDER.Name(), utils.WorkloadClusterType)
 
 	log.Infof("Workload Cluster %s Information: ", workloadClusterName)
 	err = utils.PrintClusterInformation(kubeConfigPath, workloadClusterKubeContext)
@@ -83,11 +86,11 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster and then cleanup workload cluster
-	err = utils.DeleteCluster(workloadClusterName, provider, utils.WorkloadClusterType)
+	err = utils.DeleteCluster(workloadClusterName, azure.PROVIDER.Name(), utils.WorkloadClusterType)
 	if err != nil {
 		log.Errorf("error while deleting workload cluster: %v", err)
 
-		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider)
+		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, azure.PROVIDER.Name())
 		if err != nil {
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
 		}
@@ -107,7 +110,7 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
-	err = utils.DeleteCluster(managementClusterName, provider, utils.ManagementClusterType)
+	err = utils.DeleteCluster(managementClusterName, azure.PROVIDER.Name(), utils.ManagementClusterType)
 	if err != nil {
 		log.Errorf("error while deleting management cluster: %v", err)
 

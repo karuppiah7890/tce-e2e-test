@@ -7,7 +7,6 @@ import "context"
 
 const AWS = "aws"
 const VSPHERE = "vsphere"
-const AZURE = "azure"
 const Docker = "docker"
 
 // TODO: Change name?
