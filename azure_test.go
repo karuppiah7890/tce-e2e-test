@@ -14,19 +14,19 @@ import (
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("azure-mgmt-wkld-e2e")
 
-	runProviderTest()
+	runProviderTest(azure.PROVIDER)
 }
 
-func runProviderTest() {
+func runProviderTest(provider utils.Provider) {
 	utils.RunChecks()
 
-	azure.PROVIDER.CheckRequiredEnvVars()
+	provider.CheckRequiredEnvVars()
 
-	azure.PROVIDER.Init()
+	provider.Init()
 
 	managementClusterName, workloadClusterName := utils.GetRandomClusterNames()
 
-	azure.PROVIDER.PreClusterCreationTasks(managementClusterName, utils.ManagementClusterType)
+	provider.PreClusterCreationTasks(managementClusterName, utils.ManagementClusterType)
 
 	managementClusterKubeContext := utils.GetKubeContextForTanzuCluster(managementClusterName)
 	kubeConfigPath, err := utils.GetKubeConfigPath()
@@ -35,16 +35,16 @@ func runProviderTest() {
 		log.Fatalf("error while getting kubeconfig path: %v", err)
 	}
 
-	err = utils.RunCluster(managementClusterName, azure.PROVIDER.Name(), utils.ManagementClusterType)
+	err = utils.RunCluster(managementClusterName, provider.Name(), utils.ManagementClusterType)
 	if err != nil {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
-		utils.ManagementClusterCreationFailureTasks(context.TODO(), managementClusterName, kubeConfigPath, managementClusterKubeContext, azure.PROVIDER)
+		utils.ManagementClusterCreationFailureTasks(context.TODO(), managementClusterName, kubeConfigPath, managementClusterKubeContext, provider)
 		log.Fatal("Summary: error while running management cluster: %v", runManagementClusterErr)
 	}
 
 	// TODO: Handle errors
-	utils.GetClusterKubeConfig(managementClusterName, azure.PROVIDER.Name(), utils.ManagementClusterType)
+	utils.GetClusterKubeConfig(managementClusterName, provider.Name(), utils.ManagementClusterType)
 
 	log.Infof("Management Cluster %s Information: ", managementClusterName)
 	err = utils.PrintClusterInformation(kubeConfigPath, managementClusterKubeContext)
@@ -53,16 +53,16 @@ func runProviderTest() {
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
 
-	azure.PROVIDER.PreClusterCreationTasks(workloadClusterName, utils.WorkloadClusterType)
+	provider.PreClusterCreationTasks(workloadClusterName, utils.WorkloadClusterType)
 
 	workloadClusterKubeContext := utils.GetKubeContextForTanzuCluster(workloadClusterName)
 
-	err = utils.RunCluster(workloadClusterName, azure.PROVIDER.Name(), utils.WorkloadClusterType)
+	err = utils.RunCluster(workloadClusterName, provider.Name(), utils.WorkloadClusterType)
 	if err != nil {
 		runWorkloadClusterErr := err
 		log.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
 
-		utils.WorkloadClusterCreationFailureTasks(context.TODO(), managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext, azure.PROVIDER)
+		utils.WorkloadClusterCreationFailureTasks(context.TODO(), managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext, provider)
 
 		log.Fatal("error while running workload cluster: %v", runWorkloadClusterErr)
 	}
@@ -70,7 +70,7 @@ func runProviderTest() {
 	utils.CheckWorkloadClusterIsRunning(workloadClusterName)
 
 	// TODO: Handle errors
-	utils.GetClusterKubeConfig(workloadClusterName, azure.PROVIDER.Name(), utils.WorkloadClusterType)
+	utils.GetClusterKubeConfig(workloadClusterName, provider.Name(), utils.WorkloadClusterType)
 
 	log.Infof("Workload Cluster %s Information: ", workloadClusterName)
 	err = utils.PrintClusterInformation(kubeConfigPath, workloadClusterKubeContext)
@@ -86,11 +86,11 @@ func runProviderTest() {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster and then cleanup workload cluster
-	err = utils.DeleteCluster(workloadClusterName, azure.PROVIDER.Name(), utils.WorkloadClusterType)
+	err = utils.DeleteCluster(workloadClusterName, provider.Name(), utils.WorkloadClusterType)
 	if err != nil {
 		log.Errorf("error while deleting workload cluster: %v", err)
 
-		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, azure.PROVIDER.Name())
+		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider.Name())
 		if err != nil {
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
 		}
@@ -110,7 +110,7 @@ func runProviderTest() {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
-	err = utils.DeleteCluster(managementClusterName, azure.PROVIDER.Name(), utils.ManagementClusterType)
+	err = utils.DeleteCluster(managementClusterName, provider.Name(), utils.ManagementClusterType)
 	if err != nil {
 		log.Errorf("error while deleting management cluster: %v", err)
 
