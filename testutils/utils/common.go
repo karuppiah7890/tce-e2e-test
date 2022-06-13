@@ -17,7 +17,6 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/vsphere"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -42,9 +41,6 @@ var WorkloadClusterType = ClusterType{Name: "cluster"}
 
 func CheckEnvVars(provider string) bool {
 	switch provider {
-	case "vsphere":
-		vsphere.CheckRequiredVsphereEnvVars()
-		return true
 	case "docker":
 		return true
 	default:
@@ -496,11 +492,12 @@ func PlatformSupportCheck() {
 	}
 }
 
-func UpdateVars(provider, ClusterType string) {
+// TODO: Why pass provider if it's only for vSphere?
+func UpdateVars(provider string, clusterType ClusterType) {
 	if provider == "vsphere" {
-		if ClusterType == "management" {
+		if clusterType == ManagementClusterType {
 			os.Setenv("VSPHERE_CONTROL_PLANE_ENDPOINT", os.Getenv("VSPHERE_MANAGEMENT_CLUSTER_ENDPOINT"))
-		} else if ClusterType == "workload" {
+		} else if clusterType == WorkloadClusterType {
 			os.Setenv("VSPHERE_CONTROL_PLANE_ENDPOINT", os.Getenv("VSPHERE_WORKLOAD_CLUSTER_ENDPOINT"))
 		}
 	}
