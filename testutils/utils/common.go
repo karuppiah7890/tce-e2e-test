@@ -582,3 +582,109 @@ func WorkloadClusterCreationFailureTasks(ctx context.Context, managementClusterN
 		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 	}
 }
+
+func RunProviderTest(provider Provider) {
+	RunChecks()
+
+	provider.CheckRequiredEnvVars()
+
+	provider.Init()
+
+	managementClusterName, workloadClusterName := GetRandomClusterNames()
+
+	provider.PreClusterCreationTasks(managementClusterName, ManagementClusterType)
+
+	managementClusterKubeContext := GetKubeContextForTanzuCluster(managementClusterName)
+	kubeConfigPath, err := GetKubeConfigPath()
+	if err != nil {
+		// TODO: Should we continue here for any reason without stopping? As kubeconfig path is not available
+		log.Fatalf("error while getting kubeconfig path: %v", err)
+	}
+
+	err = RunCluster(managementClusterName, provider.Name(), ManagementClusterType)
+	if err != nil {
+		runManagementClusterErr := err
+		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
+		ManagementClusterCreationFailureTasks(context.TODO(), managementClusterName, kubeConfigPath, managementClusterKubeContext, provider)
+		log.Fatal("Summary: error while running management cluster: %v", runManagementClusterErr)
+	}
+
+	// TODO: Handle errors
+	GetClusterKubeConfig(managementClusterName, provider.Name(), ManagementClusterType)
+
+	log.Infof("Management Cluster %s Information: ", managementClusterName)
+	err = PrintClusterInformation(kubeConfigPath, managementClusterKubeContext)
+	if err != nil {
+		// Should we panic here and stop?
+		log.Errorf("error while printing management cluster information: %v", err)
+	}
+
+	provider.PreClusterCreationTasks(workloadClusterName, WorkloadClusterType)
+
+	workloadClusterKubeContext := GetKubeContextForTanzuCluster(workloadClusterName)
+
+	err = RunCluster(workloadClusterName, provider.Name(), WorkloadClusterType)
+	if err != nil {
+		runWorkloadClusterErr := err
+		log.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
+
+		WorkloadClusterCreationFailureTasks(context.TODO(), managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext, provider)
+
+		log.Fatal("error while running workload cluster: %v", runWorkloadClusterErr)
+	}
+
+	CheckWorkloadClusterIsRunning(workloadClusterName)
+
+	// TODO: Handle errors
+	GetClusterKubeConfig(workloadClusterName, provider.Name(), WorkloadClusterType)
+
+	log.Infof("Workload Cluster %s Information: ", workloadClusterName)
+	err = PrintClusterInformation(kubeConfigPath, workloadClusterKubeContext)
+	if err != nil {
+		// Should we panic here and stop?
+		log.Errorf("error while printing workload cluster information: %v", err)
+	}
+
+	// TODO: Consider testing one basic package or we can do this separately or have
+	// a feature flag to test it when needed and skip it when not needed.
+	// This will give us an idea of how testing packages looks like and give an example
+	// to TCE package owners
+
+	// TODO: Handle errors during cluster deletion
+	// and cleanup management cluster and then cleanup workload cluster
+	err = DeleteCluster(workloadClusterName, provider.Name(), WorkloadClusterType)
+	if err != nil {
+		log.Errorf("error while deleting workload cluster: %v", err)
+
+		err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider.Name())
+		if err != nil {
+			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
+		}
+
+		log.Fatal("error while deleting workload cluster: %v", err)
+	}
+
+	// TODO: Handle errors during waiting for cluster deletion.
+	// We could retry in some cases, to just list the workload clusters.
+	// If all retries fail, cleanup management cluster and then cleanup workload cluster
+	WaitForWorkloadClusterDeletion(workloadClusterName)
+
+	err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
+	if err != nil {
+		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
+	}
+
+	// TODO: Handle errors during cluster deletion
+	// and cleanup management cluster
+	err = DeleteCluster(managementClusterName, provider.Name(), ManagementClusterType)
+	if err != nil {
+		log.Errorf("error while deleting management cluster: %v", err)
+
+		err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
+		if err != nil {
+			log.Errorf("error while collecting diagnostics of management cluster: %v", err)
+		}
+
+		log.Fatal("error while deleting management cluster: %v", err)
+	}
+}
