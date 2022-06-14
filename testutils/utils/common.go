@@ -39,15 +39,6 @@ type EnvVars []string
 var ManagementClusterType = ClusterType{Name: "management-cluster"}
 var WorkloadClusterType = ClusterType{Name: "cluster"}
 
-func CheckEnvVars(provider string) bool {
-	switch provider {
-	case "docker":
-		return true
-	default:
-		return false
-	}
-}
-
 func (clusterType ClusterType) TanzuCommand() string {
 	return clusterType.Name
 }
