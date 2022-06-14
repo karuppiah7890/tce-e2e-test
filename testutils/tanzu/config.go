@@ -89,6 +89,7 @@ func TanzuAzureConfig(clusterName string) TanzuConfig {
 	}
 }
 
+//TODO: Should we stick to env vars for cluster config or can we use yaml like tanzu cli consumes
 func TanzuConfigToEnvVars(tanzuConfig TanzuConfig) EnvVars {
 	envVars := make(EnvVars, 0, len(tanzuConfig))
 

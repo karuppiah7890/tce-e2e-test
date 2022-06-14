@@ -6,6 +6,7 @@ import (
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 )
 
@@ -39,8 +40,8 @@ func (provider *Provider) CleanupCluster(ctx context.Context, clusterName string
 }
 
 //TODO: Maybe make use of https://github.com/spf13/viper to set env vars and make some values as default and parameterised.
-func (provider *Provider) GetTanzuConfig(clusterName string) utils.TanzuConfig {
-	return utils.TanzuConfig{
+func (provider *Provider) GetTanzuConfig(clusterName string) tanzu.TanzuConfig {
+	return tanzu.TanzuConfig{
 		"CLUSTER_NAME":               clusterName,
 		"INFRASTRUCTURE_PROVIDER":    provider.Name(),
 		"CLUSTER_PLAN":               "dev",

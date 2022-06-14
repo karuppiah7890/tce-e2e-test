@@ -22,8 +22,6 @@ import (
 
 // TODO: Further move the functions to specifics file/libs accordingly
 
-type TanzuConfig map[string]string
-
 type ClusterType struct {
 	Name string
 }
@@ -33,8 +31,6 @@ type WorkloadCluster struct {
 	Status string `json:"status"`
 }
 type WorkloadClusters []WorkloadCluster
-
-type EnvVars []string
 
 var ManagementClusterType = ClusterType{Name: "management-cluster"}
 var WorkloadClusterType = ClusterType{Name: "cluster"}
@@ -102,7 +98,7 @@ func CheckTanzuClusterCLIPluginInstallation(clusterType ClusterType) {
 }
 
 func RunCluster(clusterName string, provider Provider, clusterType ClusterType) error {
-	envVars := tanzuConfigToEnvVars(provider.GetTanzuConfig(clusterName))
+	envVars := tanzu.TanzuConfigToEnvVars(provider.GetTanzuConfig(clusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -132,7 +128,7 @@ func RunCluster(clusterName string, provider Provider, clusterType ClusterType) 
 
 func GetClusterKubeConfig(clusterName string, provider Provider, clusterType ClusterType) {
 	// TODO: Do we really need the secrets here?
-	envVars := tanzuConfigToEnvVars(provider.GetTanzuConfig(clusterName))
+	envVars := tanzu.TanzuConfigToEnvVars(provider.GetTanzuConfig(clusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		// TODO: Replace magic strings like "tanzu", "management-cluster" etc
 		Name: "tanzu",
@@ -347,7 +343,7 @@ func CleanupDockerBootstrapCluster(managementClusterName string) error {
 
 func DeleteCluster(clusterName string, provider Provider, clusterType ClusterType) error {
 	// TODO: Do we really need the  secrets here?
-	envVars := tanzuConfigToEnvVars(provider.GetTanzuConfig(clusterName))
+	envVars := tanzu.TanzuConfigToEnvVars(provider.GetTanzuConfig(clusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -376,17 +372,6 @@ func DeleteCluster(clusterName string, provider Provider, clusterType ClusterTyp
 	}
 
 	return nil
-}
-
-//TODO: Should we stick to env vars for cluster config or can we use yaml like tanzu cli consumes
-func tanzuConfigToEnvVars(tanzuConfig TanzuConfig) EnvVars {
-	envVars := make(EnvVars, 0, len(tanzuConfig))
-
-	for key, value := range tanzuConfig {
-		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
-	}
-
-	return envVars
 }
 
 func PlatformSupportCheck() {
