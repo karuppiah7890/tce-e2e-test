@@ -3,11 +3,7 @@ package utils
 import "context"
 
 // Question: Move this to a package named infrastructure?
-// Say something like providers or infra providers? Or it looks when calling utils.AWS from a caller perspective
-
-const AWS = "aws"
-const VSPHERE = "vsphere"
-const Docker = "docker"
+// Say something like providers or infra providers? Or it looks weird when calling utils.Provider from a caller perspective
 
 // TODO: Change name?
 type Provider interface {
