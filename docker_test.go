@@ -11,8 +11,7 @@ import (
 )
 
 func TestDockerManagementAndWorkloadCluster(t *testing.T) {
-	provider := utils.Docker
-	log.InitLogger(fmt.Sprintf("%s-mgmt-wkld-e2e", provider))
+	log.InitLogger(fmt.Sprintf("docker-mgmt-wkld-e2e"))
 
 	utils.RunProviderTest(dockerprovider.PROVIDER)
 }
