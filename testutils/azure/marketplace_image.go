@@ -134,7 +134,7 @@ func ParseK8sYamlAndFetchAzureMachineTemplates(fileR []byte) []kubeRuntime.Objec
 func GetAzureMarketplaceImageInfoForCluster(clusterName string, clusterType utils.ClusterType) []*capzv1beta1.AzureMarketplaceImage {
 	var clusterCreateDryRunOutputBuffer bytes.Buffer
 
-	envVars := tanzu.TanzuConfigToEnvVars(tanzu.TanzuAzureConfig(clusterName))
+	envVars := tanzu.TanzuConfigToEnvVars(PROVIDER.GetTanzuConfig(clusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
