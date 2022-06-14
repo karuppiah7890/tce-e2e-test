@@ -13,4 +13,5 @@ type Provider interface {
 	CheckRequiredEnvVars() bool
 	PreClusterCreationTasks(clusterName string, clusterType ClusterType) error
 	CleanupCluster(ctx context.Context, clusterName string) error
+	GetTanzuConfig(clusterName string) TanzuConfig
 }

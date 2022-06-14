@@ -30,5 +30,22 @@ func (provider *Provider) CleanupCluster(ctx context.Context, clusterName string
 	return nil
 }
 
+//TODO: Maybe make use of https://github.com/spf13/viper to set env vars and make some values as default and parameterised.
+func (provider *Provider) GetTanzuConfig(clusterName string) utils.TanzuConfig {
+	return utils.TanzuConfig{
+		"CLUSTER_NAME":              clusterName,
+		"INFRASTRUCTURE_PROVIDER":   "docker",
+		"CLUSTER_PLAN":              "dev",
+		"OS_ARCH":                   "",
+		"OS_NAME":                   "",
+		"OS_VERSION":                "",
+		"CLUSTER_CIDR":              "100.96.0.0/11",
+		"SERVICE_CIDR":              "100.64.0.0/13",
+		"ENABLE_CEIP_PARTICIPATION": "false",
+		"ENABLE_MHC":                "true",
+		"IDENTITY_MANAGEMENT_TYPE":  "none",
+	}
+}
+
 // TODO: Change name?
 var PROVIDER utils.Provider = &Provider{}

@@ -110,8 +110,8 @@ func CheckTanzuClusterCLIPluginInstallation(clusterType ClusterType) {
 	}
 }
 
-func RunCluster(clusterName string, provider string, clusterType ClusterType) error {
-	envVars := tanzuConfigToEnvVars(tanzuConfig(clusterName, provider))
+func RunCluster(clusterName string, provider Provider, clusterType ClusterType) error {
+	envVars := tanzuConfigToEnvVars(provider.GetTanzuConfig(clusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -139,9 +139,9 @@ func RunCluster(clusterName string, provider string, clusterType ClusterType) er
 	return nil
 }
 
-func GetClusterKubeConfig(clusterName string, provider string, clusterType ClusterType) {
+func GetClusterKubeConfig(clusterName string, provider Provider, clusterType ClusterType) {
 	// TODO: Do we really need the secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuConfig(clusterName, provider))
+	envVars := tanzuConfigToEnvVars(provider.GetTanzuConfig(clusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		// TODO: Replace magic strings like "tanzu", "management-cluster" etc
 		Name: "tanzu",
@@ -354,9 +354,9 @@ func CleanupDockerBootstrapCluster(managementClusterName string) error {
 	return nil
 }
 
-func DeleteCluster(clusterName string, provider string, clusterType ClusterType) error {
+func DeleteCluster(clusterName string, provider Provider, clusterType ClusterType) error {
 	// TODO: Do we really need the  secrets here?
-	envVars := tanzuConfigToEnvVars(tanzuConfig(clusterName, provider))
+	envVars := tanzuConfigToEnvVars(provider.GetTanzuConfig(clusterName))
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
@@ -396,94 +396,6 @@ func tanzuConfigToEnvVars(tanzuConfig TanzuConfig) EnvVars {
 	}
 
 	return envVars
-}
-
-//TODO: Maybe make use of https://github.com/spf13/viper to set env vars and make some values as default and parameterised.
-func tanzuConfig(clusterName string, infraProvider string) TanzuConfig {
-	switch infraProvider {
-	case "aws":
-		return TanzuConfig{
-			"CLUSTER_NAME":               clusterName,
-			"INFRASTRUCTURE_PROVIDER":    "aws",
-			"CLUSTER_PLAN":               "dev",
-			"AWS_NODE_AZ":                "us-east-1a",
-			"AWS_REGION":                 "us-east-1",
-			"OS_ARCH":                    "amd64",
-			"OS_NAME":                    "amazon",
-			"OS_VERSION":                 "2",
-			"CONTROL_PLANE_MACHINE_TYPE": "m5.xlarge",
-			"NODE_MACHINE_TYPE":          "m5.xlarge",
-			"AWS_PRIVATE_NODE_CIDR":      "10.0.16.0/20",
-			"AWS_PUBLIC_NODE_CIDR":       "10.0.0.0/20",
-			"AWS_VPC_CIDR":               "10.0.0.0/16",
-			"CLUSTER_CIDR":               "100.96.0.0/11",
-			"SERVICE_CIDR":               "100.64.0.0/13",
-			"ENABLE_CEIP_PARTICIPATION":  "false",
-			"ENABLE_MHC":                 "true",
-			"BASTION_HOST_ENABLED":       "true",
-			"IDENTITY_MANAGEMENT_TYPE":   "none",
-		}
-	case "azure":
-		return TanzuConfig{
-			"CLUSTER_NAME":                     clusterName,
-			"INFRASTRUCTURE_PROVIDER":          "azure",
-			"CLUSTER_PLAN":                     "dev",
-			"AZURE_LOCATION":                   "australiaeast",
-			"AZURE_CONTROL_PLANE_MACHINE_TYPE": "Standard_D4s_v3",
-			"AZURE_NODE_MACHINE_TYPE":          "Standard_D4s_v3",
-			"OS_ARCH":                          "amd64",
-			"OS_NAME":                          "ubuntu",
-			"OS_VERSION":                       "20.04",
-			"AZURE_VNET_CIDR":                  "10.0.0.0/16",
-			"AZURE_CONTROL_PLANE_SUBNET_CIDR":  "10.0.0.0/24",
-			"AZURE_NODE_SUBNET_CIDR":           "10.0.1.0/24",
-			"CLUSTER_CIDR":                     "100.96.0.0/11",
-			"SERVICE_CIDR":                     "100.64.0.0/13",
-			"ENABLE_CEIP_PARTICIPATION":        "false",
-			"ENABLE_MHC":                       "true",
-			"IDENTITY_MANAGEMENT_TYPE":         "none",
-		}
-	case "vsphere":
-		return TanzuConfig{
-			"CLUSTER_NAME":                   clusterName,
-			"INFRASTRUCTURE_PROVIDER":        "vsphere",
-			"CLUSTER_PLAN":                   "dev",
-			"OS_ARCH":                        "amd64",
-			"OS_NAME":                        "photon",
-			"OS_VERSION":                     "3",
-			"VSPHERE_CONTROL_PLANE_DISK_GIB": "40",
-			"VSPHERE_CONTROL_PLANE_MEM_MIB":  "16384",
-			"VSPHERE_CONTROL_PLANE_NUM_CPUS": "4",
-			"VSPHERE_WORKER_DISK_GIB":        "40",
-			"VSPHERE_WORKER_MEM_MIB":         "16384",
-			"VSPHERE_WORKER_NUM_CPUS":        "4",
-			"VSPHERE_INSECURE":               "true",
-			"DEPLOY_TKG_ON_VSPHERE7":         "true",
-			"ENABLE_TKGS_ON_VSPHERE7":        "false",
-			"CLUSTER_CIDR":                   "100.96.0.0/11",
-			"SERVICE_CIDR":                   "100.64.0.0/13",
-			"ENABLE_CEIP_PARTICIPATION":      "false",
-			"ENABLE_MHC":                     "true",
-			"IDENTITY_MANAGEMENT_TYPE":       "none",
-		}
-	case "docker":
-		return TanzuConfig{
-			"CLUSTER_NAME":              clusterName,
-			"INFRASTRUCTURE_PROVIDER":   "docker",
-			"CLUSTER_PLAN":              "dev",
-			"OS_ARCH":                   "",
-			"OS_NAME":                   "",
-			"OS_VERSION":                "",
-			"CLUSTER_CIDR":              "100.96.0.0/11",
-			"SERVICE_CIDR":              "100.64.0.0/13",
-			"ENABLE_CEIP_PARTICIPATION": "false",
-			"ENABLE_MHC":                "true",
-			"IDENTITY_MANAGEMENT_TYPE":  "none",
-		}
-	}
-	return TanzuConfig{
-		"CLUSTER_NAME": clusterName,
-	}
 }
 
 func PlatformSupportCheck() {
@@ -594,7 +506,7 @@ func RunProviderTest(provider Provider) {
 		log.Fatalf("error while getting kubeconfig path: %v", err)
 	}
 
-	err = RunCluster(managementClusterName, provider.Name(), ManagementClusterType)
+	err = RunCluster(managementClusterName, provider, ManagementClusterType)
 	if err != nil {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
@@ -603,7 +515,7 @@ func RunProviderTest(provider Provider) {
 	}
 
 	// TODO: Handle errors
-	GetClusterKubeConfig(managementClusterName, provider.Name(), ManagementClusterType)
+	GetClusterKubeConfig(managementClusterName, provider, ManagementClusterType)
 
 	log.Infof("Management Cluster %s Information: ", managementClusterName)
 	err = PrintClusterInformation(kubeConfigPath, managementClusterKubeContext)
@@ -616,7 +528,7 @@ func RunProviderTest(provider Provider) {
 
 	workloadClusterKubeContext := GetKubeContextForTanzuCluster(workloadClusterName)
 
-	err = RunCluster(workloadClusterName, provider.Name(), WorkloadClusterType)
+	err = RunCluster(workloadClusterName, provider, WorkloadClusterType)
 	if err != nil {
 		runWorkloadClusterErr := err
 		log.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
@@ -629,7 +541,7 @@ func RunProviderTest(provider Provider) {
 	CheckWorkloadClusterIsRunning(workloadClusterName)
 
 	// TODO: Handle errors
-	GetClusterKubeConfig(workloadClusterName, provider.Name(), WorkloadClusterType)
+	GetClusterKubeConfig(workloadClusterName, provider, WorkloadClusterType)
 
 	log.Infof("Workload Cluster %s Information: ", workloadClusterName)
 	err = PrintClusterInformation(kubeConfigPath, workloadClusterKubeContext)
@@ -645,7 +557,7 @@ func RunProviderTest(provider Provider) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster and then cleanup workload cluster
-	err = DeleteCluster(workloadClusterName, provider.Name(), WorkloadClusterType)
+	err = DeleteCluster(workloadClusterName, provider, WorkloadClusterType)
 	if err != nil {
 		log.Errorf("error while deleting workload cluster: %v", err)
 
@@ -669,7 +581,7 @@ func RunProviderTest(provider Provider) {
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
-	err = DeleteCluster(managementClusterName, provider.Name(), ManagementClusterType)
+	err = DeleteCluster(managementClusterName, provider, ManagementClusterType)
 	if err != nil {
 		log.Errorf("error while deleting management cluster: %v", err)
 

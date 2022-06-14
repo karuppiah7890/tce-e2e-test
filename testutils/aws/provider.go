@@ -38,6 +38,31 @@ func (provider *Provider) CleanupCluster(ctx context.Context, clusterName string
 	return nil
 }
 
+//TODO: Maybe make use of https://github.com/spf13/viper to set env vars and make some values as default and parameterised.
+func (provider *Provider) GetTanzuConfig(clusterName string) utils.TanzuConfig {
+	return utils.TanzuConfig{
+		"CLUSTER_NAME":               clusterName,
+		"INFRASTRUCTURE_PROVIDER":    provider.Name(),
+		"CLUSTER_PLAN":               "dev",
+		"AWS_NODE_AZ":                "us-east-1a",
+		"AWS_REGION":                 "us-east-1",
+		"OS_ARCH":                    "amd64",
+		"OS_NAME":                    "amazon",
+		"OS_VERSION":                 "2",
+		"CONTROL_PLANE_MACHINE_TYPE": "m5.xlarge",
+		"NODE_MACHINE_TYPE":          "m5.xlarge",
+		"AWS_PRIVATE_NODE_CIDR":      "10.0.16.0/20",
+		"AWS_PUBLIC_NODE_CIDR":       "10.0.0.0/20",
+		"AWS_VPC_CIDR":               "10.0.0.0/16",
+		"CLUSTER_CIDR":               "100.96.0.0/11",
+		"SERVICE_CIDR":               "100.64.0.0/13",
+		"ENABLE_CEIP_PARTICIPATION":  "false",
+		"ENABLE_MHC":                 "true",
+		"BASTION_HOST_ENABLED":       "true",
+		"IDENTITY_MANAGEMENT_TYPE":   "none",
+	}
+}
+
 func createCloudFormationStack() {
 	log.Info("Creating Cloud formation stack ")
 	exitCode, err := clirunner.Run(clirunner.Cmd{
