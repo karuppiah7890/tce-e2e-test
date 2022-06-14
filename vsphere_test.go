@@ -9,11 +9,6 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 )
 
-// TODO: Make region as environment variable
-
-// TODO: Consider making all as environment variables. Hard coded values in test code can be default.
-// We can pass env vars to override stuff
-
 func TestManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("vsphere-mgmt-wkld-e2e")
 
