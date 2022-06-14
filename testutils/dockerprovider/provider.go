@@ -34,7 +34,7 @@ func (provider *Provider) CleanupCluster(ctx context.Context, clusterName string
 func (provider *Provider) GetTanzuConfig(clusterName string) utils.TanzuConfig {
 	return utils.TanzuConfig{
 		"CLUSTER_NAME":              clusterName,
-		"INFRASTRUCTURE_PROVIDER":   "docker",
+		"INFRASTRUCTURE_PROVIDER":   provider.Name(),
 		"CLUSTER_PLAN":              "dev",
 		"OS_ARCH":                   "",
 		"OS_NAME":                   "",
