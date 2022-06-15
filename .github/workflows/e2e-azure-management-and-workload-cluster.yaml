@@ -1,0 +1,105 @@
+name: E2E Test - Azure Management and Workload Cluster
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - release-*
+    paths:
+      - "**.go"
+      - "cli/cmd/plugin/**/go.mod"
+      - "**.sh"
+      - ".github/workflows/e2e-azure-management-and-workload-cluster.yaml"
+    tags-ignore:
+      - "**"
+
+jobs:
+  setup-runner:
+    name: Start self-hosted EC2 runner
+    # Only run this job if we're in the main repo, not a fork.
+    if: github.repository == 'karuppiah7890/tce-e2e-test'
+    runs-on: ubuntu-latest
+    outputs:
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        shell: bash
+        run: |
+          echo "GITHUB_RUN_ID: ${GITHUB_RUN_ID}"
+          echo "GITHUB_RUN_NUMBER: ${GITHUB_RUN_NUMBER}"
+          echo "GITHUB_RUN_ATTEMPT: ${GITHUB_RUN_ATTEMPT}"
+          INSTANCE_NAME="id-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          echo "INSTANCE_NAME: ${INSTANCE_NAME}"
+          echo ::set-output name=ec2-instance-id::${INSTANCE_NAME}
+
+  e2e-azure-management-and-workload-test:
+    # Only run this job if we're in the main repo, not a fork.
+    if: github.repository == 'karuppiah7890/tce-e2e-test'
+    name: E2E Azure Management and Workload Cluster Test
+    needs: setup-runner # required to start the main job when the runner is ready
+    runs-on: ${{ needs.setup-runner.outputs.ec2-instance-id }} # run the job on the newly created runner
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.17"
+        id: go
+
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Get Date
+        id: get-date
+        shell: bash
+        run: |
+          echo "::set-output name=date::$(date -u "+%Y-%m")"
+
+      - name: Restore Go Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run Azure Management and Workload Cluster E2E Tests
+        env:
+          DAILY_BUILD: ${{ github.event.client_payload.daily-build }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SSH_PUBLIC_KEY_B64: ${{ secrets.AZURE_SSH_PUBLIC_KEY_B64 }}
+        run: |
+          go test -v ./azure_test.go --timeout=2h 
+
+      - name: Collect tanzu diagnostics data
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: diagnostics-data
+          path: |
+            bootstrap.*.diagnostics.tar.gz
+            management-cluster.*.diagnostics.tar.gz
+            workload-cluster.*.diagnostics.tar.gz
+
+  teardown-runner:
+    name: Stop self-hosted EC2 runner
+    # Only run this job if we're in the main repo, not a fork.
+    if: github.repository == 'karuppiah7890/tce-e2e-test'
+    needs:
+      - setup-runner # required to get output from the setup-runner job
+      - e2e-azure-management-and-workload-test # required to wait when the main job is done
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stop EC2 runner
+        id: stop-ec2-runner
+        shell: bash
+        run: |
+          echo "GITHUB_RUN_ID: ${GITHUB_RUN_ID}"
+          echo "GITHUB_RUN_NUMBER: ${GITHUB_RUN_NUMBER}"
+          echo "GITHUB_RUN_ATTEMPT: ${GITHUB_RUN_ATTEMPT}"
+          INSTANCE_NAME="id-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          echo "INSTANCE_NAME: ${INSTANCE_NAME}"
