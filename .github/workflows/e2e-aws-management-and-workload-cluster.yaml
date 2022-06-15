@@ -8,8 +8,6 @@ on:
       - release-*
     paths:
       - "**.go"
-      - "cli/cmd/plugin/**/go.mod"
-      - "**.sh"
       - ".github/workflows/e2e-aws-management-and-workload-cluster.yaml"
     tags-ignore:
       - "**"

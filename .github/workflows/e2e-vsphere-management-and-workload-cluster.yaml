@@ -2,6 +2,15 @@ name: E2E Test - vSphere Management and Workload Cluster Go Lang
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - release-*
+    paths:
+      - "**.go"
+      - ".github/workflows/e2e-vsphere-management-and-workload-cluster.yaml"
+    tags-ignore:
+      - "**"
 
 jobs:
   e2e-vsphere-management-cluster-test:
