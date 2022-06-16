@@ -3,6 +3,7 @@ package azure
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -23,16 +24,21 @@ import (
 )
 
 // TODO: Should we just use one function acceptAzureImageLicenses with the whole implementation? There will be a for loop with a big body though
-func AcceptAzureImageLicenses(subscriptionID string, cred *azidentity.ClientSecretCredential, azureMarketplaceImages ...*capzv1beta1.AzureMarketplaceImage) {
+func AcceptAzureImageLicenses(subscriptionID string, cred *azidentity.ClientSecretCredential, azureMarketplaceImages ...*capzv1beta1.AzureMarketplaceImage) error {
 	for _, azureMarketplaceImage := range azureMarketplaceImages {
-		AcceptAzureImageLicense(subscriptionID, cred, azureMarketplaceImage)
+		err := AcceptAzureImageLicense(subscriptionID, cred, azureMarketplaceImage)
+		if err != nil {
+			return fmt.Errorf("failed to azure image license: %v", err)
+		}
 	}
+
+	return nil
 }
 
 // This naming is for clarity until we move the function to some azure specific
 // package then we can remove the reference to azure from it and rename
 // it back to acceptImageLicense
-func AcceptAzureImageLicense(subscriptionID string, cred *azidentity.ClientSecretCredential, azureMarketplaceImage *capzv1beta1.AzureMarketplaceImage) {
+func AcceptAzureImageLicense(subscriptionID string, cred *azidentity.ClientSecretCredential, azureMarketplaceImage *capzv1beta1.AzureMarketplaceImage) error {
 	azureVmImagePublisher := azureMarketplaceImage.Publisher
 	azureVmImageBillingPlanSku := azureMarketplaceImage.SKU
 	azureVmImageOffer := azureMarketplaceImage.Offer
@@ -48,17 +54,17 @@ func AcceptAzureImageLicense(subscriptionID string, cred *azidentity.ClientSecre
 		azureVmImageBillingPlanSku,
 		nil)
 	if err != nil {
-		log.Fatalf("Error while getting marketplace terms for Azure VM image: %+v", err)
+		return fmt.Errorf("error while getting marketplace terms for Azure VM image: %+v", err)
 	}
 
 	agreementTerms := res.MarketplaceAgreementsClientGetResult.AgreementTerms
 
 	if agreementTerms.Properties == nil {
-		log.Fatalf("Error: Azure VM image agreement terms Properties field is not available")
+		return fmt.Errorf("error: Azure VM image agreement terms Properties field is not available")
 	}
 
 	if agreementTerms.Properties.Accepted == nil {
-		log.Fatalf("Error: Azure VM image agreement terms Properties Accepted field is not available")
+		return fmt.Errorf("error: Azure VM image agreement terms Properties Accepted field is not available")
 	}
 
 	if isTermsAccepted := *agreementTerms.Properties.Accepted; isTermsAccepted {
@@ -71,30 +77,32 @@ func AcceptAzureImageLicense(subscriptionID string, cred *azidentity.ClientSecre
 		// This is because the sign API does not work as of this comment. Reference - https://docs.microsoft.com/en-us/answers/questions/52637/cannot-sign-azure-marketplace-vm-image-licence-thr.html
 		createResponse, err := client.Create(ctx, armmarketplaceordering.OfferTypeVirtualmachine, azureVmImagePublisher, azureVmImageOffer, azureVmImageBillingPlanSku, agreementTerms, nil)
 		if err != nil {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: %+v", err)
+			return fmt.Errorf("error while signing and accepting the agreement terms for Azure VM image: %+v", err)
 		}
 
 		signedAgreementTerms := createResponse.AgreementTerms
 
 		if signedAgreementTerms.Properties == nil {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties field is not available")
+			return fmt.Errorf("error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties field is not available")
 		}
 
 		if signedAgreementTerms.Properties.Accepted == nil {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties Accepted field is not available")
+			return fmt.Errorf("error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms Properties Accepted field is not available")
 		}
 
 		if isTermsSignedAndAccepted := *signedAgreementTerms.Properties.Accepted; !isTermsSignedAndAccepted {
-			log.Fatalf("Error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms was not signed and accepted")
+			return fmt.Errorf("error while signing and accepting the agreement terms for Azure VM image: Azure VM image agreement terms was not signed and accepted")
 		} else {
 			log.Info("Accepted the Azure VM image agreement terms!")
 		}
 	}
+
+	return nil
 }
 
 // Maybe return []*capzv1beta1.AzureMachineTemplate directly? Instead of []kubeRuntime.Object
 // TODO: Rename this in a better manner? The function name and argument too
-func ParseK8sYamlAndFetchAzureMachineTemplates(fileR []byte) []kubeRuntime.Object {
+func ParseK8sYamlAndFetchAzureMachineTemplates(fileR []byte) ([]kubeRuntime.Object, error) {
 
 	// TODO: Should we just use simple plain string match since we just want to pick AzureMachineTemplate only?
 	// But yeah, in future we might parse other stuff, but as of now I don't see any such thing, so we could simplify this
@@ -102,8 +110,7 @@ func ParseK8sYamlAndFetchAzureMachineTemplates(fileR []byte) []kubeRuntime.Objec
 	acceptedK8sTypes := regexp.MustCompile(`(AzureMachineTemplate)`)
 	sepYamlFilesBytes, err := testutils.SplitYAML(fileR)
 	if err != nil {
-		// return and handle error?
-		log.Fatalf("Error while splitting YAML file. Err was: %s", err)
+		return nil, fmt.Errorf("error while splitting YAML file: %s", err)
 	}
 	retVal := make([]kubeRuntime.Object, 0, len(sepYamlFilesBytes))
 	for _, fBytes := range sepYamlFilesBytes {
@@ -117,9 +124,7 @@ func ParseK8sYamlAndFetchAzureMachineTemplates(fileR []byte) []kubeRuntime.Objec
 		obj, groupVersionKind, err := decode(fBytes, nil, nil)
 
 		if err != nil {
-			// return and handle error?
-			log.Fatalf("Error while decoding YAML object. Err was: %s", err)
-			continue
+			return nil, fmt.Errorf("error while decoding YAML object: %s", err)
 		}
 
 		if !acceptedK8sTypes.MatchString(groupVersionKind.Kind) {
@@ -128,10 +133,10 @@ func ParseK8sYamlAndFetchAzureMachineTemplates(fileR []byte) []kubeRuntime.Objec
 			retVal = append(retVal, obj)
 		}
 	}
-	return retVal
+	return retVal, nil
 }
 
-func GetAzureMarketplaceImageInfoForCluster(clusterName string, clusterType utils.ClusterType) []*capzv1beta1.AzureMarketplaceImage {
+func GetAzureMarketplaceImageInfoForCluster(clusterName string, clusterType utils.ClusterType) ([]*capzv1beta1.AzureMarketplaceImage, error) {
 	var clusterCreateDryRunOutputBuffer bytes.Buffer
 
 	envVars := tanzu.TanzuConfigToEnvVars(PROVIDER.GetTanzuConfig(clusterName))
@@ -168,27 +173,30 @@ func GetAzureMarketplaceImageInfoForCluster(clusterName string, clusterType util
 	})
 
 	if err != nil {
-		log.Fatalf("Error occurred while running %v dry run. Exit code: %v. Error: %v", clusterName, exitCode, err)
+		return nil, fmt.Errorf("error occurred while running %v dry run. Exit code: %v. Error: %v", clusterName, exitCode, err)
 	}
 
 	clusterCreateDryRunOutput, err := io.ReadAll(&clusterCreateDryRunOutputBuffer)
 	if err != nil {
 		// TODO: Should we print the whole command as part of the error?
-		log.Fatalf("Error occurred while reading output of %v create dry run: %v", clusterName, err)
+		return nil, fmt.Errorf("error occurred while reading output of %v create dry run: %v", clusterName, err)
 	}
 
-	objects := ParseK8sYamlAndFetchAzureMachineTemplates(clusterCreateDryRunOutput)
+	objects, err := ParseK8sYamlAndFetchAzureMachineTemplates(clusterCreateDryRunOutput)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while parsing K8s yaml from %v dry run to fetch azure machine template. Exit code: %v. Error: %v", clusterName, exitCode, err)
+	}
 
 	marketplaces := []*capzv1beta1.AzureMarketplaceImage{}
 
 	for _, object := range objects {
 		azureMachineTemplate, ok := object.(*capzv1beta1.AzureMachineTemplate)
 		if !ok {
-			log.Fatalf("Error occurred while parsing output of %v create dry run", clusterName)
+			return nil, fmt.Errorf("error occurred while parsing output of %v create dry run", clusterName)
 		}
 
 		marketplaces = append(marketplaces, azureMachineTemplate.Spec.Template.Spec.Image.Marketplace)
 	}
 
-	return marketplaces
+	return marketplaces, nil
 }

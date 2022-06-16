@@ -102,7 +102,7 @@ func GetClusterNodes(kubeConfigPath string, kubeContext string) ([]string, error
 	return nodesName, nil
 }
 
-func listWorkloadClusters() WorkloadClusters {
+func listWorkloadClusters() (WorkloadClusters, error) {
 	var workloadClusters WorkloadClusters
 
 	var clusterListOutput bytes.Buffer
@@ -131,8 +131,7 @@ func listWorkloadClusters() WorkloadClusters {
 	})
 
 	if err != nil {
-		// TODO: return error instead of fatal? So that the caller can retry if they want to or stop execution
-		log.Fatalf("Error occurred while listing workload clusters. Exit code: %v. Error: %v", exitCode, err)
+		return nil, fmt.Errorf("error occurred while listing workload clusters. Exit code: %v. Error: %v", exitCode, err)
 	}
 
 	// TODO: Parse JSON output from the command.
@@ -142,9 +141,12 @@ func listWorkloadClusters() WorkloadClusters {
 	// cluster in the meantime while the first one was being created and verified.
 	// This could be done manually from their local machine to test stuff etc
 
-	json.NewDecoder(&clusterListOutput).Decode(&workloadClusters)
+	err = json.NewDecoder(&clusterListOutput).Decode(&workloadClusters)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while decoding JSON containing list of workload clusters. Exit code: %v. Error: %v", exitCode, err)
+	}
 
-	return workloadClusters
+	return workloadClusters, nil
 }
 
 func PlatformSupportCheck() {
@@ -214,7 +216,7 @@ func WorkloadClusterCreationFailureTasks(ctx context.Context, r ClusterTestRunne
 	}
 }
 
-func RunProviderTest(provider Provider, r ClusterTestRunner) {
+func RunProviderTest(provider Provider, r ClusterTestRunner) error {
 	r.RunChecks()
 
 	provider.CheckRequiredEnvVars()
@@ -223,13 +225,15 @@ func RunProviderTest(provider Provider, r ClusterTestRunner) {
 
 	managementClusterName, workloadClusterName := r.GetRandomClusterNames()
 
-	provider.PreClusterCreationTasks(managementClusterName, ManagementClusterType)
+	err := provider.PreClusterCreationTasks(managementClusterName, ManagementClusterType)
+	if err != nil {
+		return fmt.Errorf("error while executing pre-cluster creation tasks for %v cluster: %v", managementClusterName, err)
+	}
 
 	managementClusterKubeContext := r.GetKubeContextForTanzuCluster(managementClusterName)
 	kubeConfigPath, err := r.GetKubeConfigPath()
 	if err != nil {
-		// TODO: Should we continue here for any reason without stopping? As kubeconfig path is not available
-		log.Fatalf("error while getting kubeconfig path: %v", err)
+		return fmt.Errorf("error while getting kubeconfig path: %v", err)
 	}
 
 	err = r.RunCluster(managementClusterName, provider, ManagementClusterType)
@@ -237,7 +241,7 @@ func RunProviderTest(provider Provider, r ClusterTestRunner) {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
 		ManagementClusterCreationFailureTasks(context.TODO(), r, managementClusterName, kubeConfigPath, managementClusterKubeContext, provider)
-		log.Fatal("Summary: error while running management cluster: %v", runManagementClusterErr)
+		return fmt.Errorf("Summary: error while running management cluster: %v", runManagementClusterErr)
 	}
 
 	// TODO: Handle errors
@@ -250,7 +254,10 @@ func RunProviderTest(provider Provider, r ClusterTestRunner) {
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
 
-	provider.PreClusterCreationTasks(workloadClusterName, WorkloadClusterType)
+	err = provider.PreClusterCreationTasks(workloadClusterName, WorkloadClusterType)
+	if err != nil {
+		return fmt.Errorf("error while executing pre-cluster creation tasks for %v cluster: %v", err, workloadClusterName)
+	}
 
 	workloadClusterKubeContext := r.GetKubeContextForTanzuCluster(workloadClusterName)
 
@@ -261,7 +268,7 @@ func RunProviderTest(provider Provider, r ClusterTestRunner) {
 
 		WorkloadClusterCreationFailureTasks(context.TODO(), r, managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext, provider)
 
-		log.Fatal("error while running workload cluster: %v", runWorkloadClusterErr)
+		return fmt.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
 	}
 
 	r.CheckWorkloadClusterIsRunning(workloadClusterName)
@@ -292,7 +299,7 @@ func RunProviderTest(provider Provider, r ClusterTestRunner) {
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
 		}
 
-		log.Fatal("error while deleting workload cluster: %v", err)
+		return fmt.Errorf("error while deleting workload cluster: %v", err)
 	}
 
 	// TODO: Handle errors during waiting for cluster deletion.
@@ -316,6 +323,8 @@ func RunProviderTest(provider Provider, r ClusterTestRunner) {
 			log.Errorf("error while collecting diagnostics of management cluster: %v", err)
 		}
 
-		log.Fatal("error while deleting management cluster: %v", err)
+		return fmt.Errorf("error while deleting management cluster: %v", err)
 	}
+
+	return nil
 }

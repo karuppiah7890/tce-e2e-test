@@ -27,16 +27,23 @@ func (provider *Provider) Name() string {
 func (provider *Provider) Init() error {
 	provider.testSecrets = ExtractAzureTestSecretsFromEnvVars()
 
-	provider.cred = Login()
+	cred, err := Login()
+	if err != nil {
+		return fmt.Errorf("error logging into azure: %v", err)
+	}
+
+	provider.cred = cred
 
 	return nil
 }
 
 func (provider *Provider) PreClusterCreationTasks(clusterName string, clusterType utils.ClusterType) error {
-	azureMarketplaceImageInfoForCluster := GetAzureMarketplaceImageInfoForCluster(clusterName, clusterType)
+	azureMarketplaceImageInfoForCluster, err := GetAzureMarketplaceImageInfoForCluster(clusterName, clusterType)
 
-	// TODO: make the below function return an error and handle the error to log and exit?
-	AcceptAzureImageLicenses(provider.testSecrets.SubscriptionID, provider.cred, azureMarketplaceImageInfoForCluster...)
+	err = AcceptAzureImageLicenses(provider.testSecrets.SubscriptionID, provider.cred, azureMarketplaceImageInfoForCluster...)
+	if err != nil {
+		return fmt.Errorf("failed to azure image licenses: %v", err)
+	}
 
 	return nil
 }
