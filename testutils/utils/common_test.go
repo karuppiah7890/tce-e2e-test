@@ -45,7 +45,12 @@ func TestRunProviderTest(t *testing.T) {
 			provider.EXPECT().CleanupCluster(gomock.Any(), "test-mgmt"),
 		)
 
-		utils.RunProviderTest(provider, r)
+		err := utils.RunProviderTest(provider, r)
+		expectedError := "error while running management cluster: some error in management cluster creation"
+		if err.Error() != expectedError {
+			t.Logf("expected error to be: %v. But got: %v", expectedError, err)
+			t.Fail()
+		}
 	})
 
 }
