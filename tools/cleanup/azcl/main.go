@@ -24,9 +24,12 @@ func main() {
 
 	azureTestSecrets := azure.ExtractAzureTestSecretsFromEnvVars()
 
-	cred := azure.Login()
+	cred, err := azure.Login()
+	if err != nil {
+		log.Fatalf("failed to login to azure: %v", err)
+	}
 
-	err := azure.DeleteResourceGroup(context.TODO(), resourceGroupName, azureTestSecrets.SubscriptionID, cred)
+	err = azure.DeleteResourceGroup(context.TODO(), resourceGroupName, azureTestSecrets.SubscriptionID, cred)
 
 	if err != nil {
 		log.Fatalf("failed to delete azure resource group: %v", err)
