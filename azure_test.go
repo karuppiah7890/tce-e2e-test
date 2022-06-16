@@ -11,5 +11,6 @@ import (
 func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("azure-mgmt-wkld-e2e")
 
-	utils.RunProviderTest(azure.PROVIDER)
+	r := utils.DefaultClusterTestRunner{}
+	utils.RunProviderTest(azure.PROVIDER, r)
 }

@@ -12,5 +12,6 @@ import (
 func TestManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("vsphere-mgmt-wkld-e2e")
 
-	utils.RunProviderTest(vsphere.PROVIDER)
+	r := utils.DefaultClusterTestRunner{}
+	utils.RunProviderTest(vsphere.PROVIDER, r)
 }

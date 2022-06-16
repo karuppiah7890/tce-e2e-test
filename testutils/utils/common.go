@@ -214,8 +214,7 @@ func WorkloadClusterCreationFailureTasks(ctx context.Context, r ClusterTestRunne
 	}
 }
 
-func RunProviderTest(provider Provider) {
-	r := DefaultClusterTestRunner{}
+func RunProviderTest(provider Provider, r ClusterTestRunner) {
 	r.RunChecks()
 
 	provider.CheckRequiredEnvVars()

@@ -12,5 +12,6 @@ import (
 func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("aws-mgmt-wkld-e2e")
 
-	utils.RunProviderTest(aws.PROVIDER)
+	r := utils.DefaultClusterTestRunner{}
+	utils.RunProviderTest(aws.PROVIDER, r)
 }
