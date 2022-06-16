@@ -25,6 +25,9 @@ type ClusterTestRunner interface {
 	CheckWorkloadClusterIsRunning(workloadClusterName string)
 	DeleteCluster(clusterName string, provider Provider, clusterType ClusterType) error
 	WaitForWorkloadClusterDeletion(workloadClusterName string)
+	CollectManagementClusterDiagnostics(managementClusterName string) error
+	CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName string, workloadClusterName string, workloadClusterInfra string) error
+	DeleteContext(kubeConfigPath string, contextName string) error
 }
 
 type DefaultClusterTestRunner struct{}
@@ -263,4 +266,16 @@ func (r DefaultClusterTestRunner) WaitForWorkloadClusterDeletion(workloadCluster
 
 	// TODO: maybe return error instead of fatal stop?
 	log.Fatalf("Timed out waiting for workload cluster %s to get deleted", workloadClusterName)
+}
+
+func (r DefaultClusterTestRunner) CollectManagementClusterDiagnostics(managementClusterName string) error {
+	return nil
+}
+
+func (r DefaultClusterTestRunner) CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName string, workloadClusterName string, workloadClusterInfra string) error {
+	return tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, workloadClusterInfra)
+}
+
+func (r DefaultClusterTestRunner) DeleteContext(kubeConfigPath string, contextName string) error {
+	return kubeclient.DeleteContext(kubeConfigPath, contextName)
 }

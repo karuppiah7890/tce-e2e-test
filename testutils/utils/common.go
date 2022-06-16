@@ -180,8 +180,8 @@ func UpdateVars(provider string, clusterType ClusterType) {
 
 }
 
-func ManagementClusterCreationFailureTasks(ctx context.Context, managementClusterName, kubeConfigPath, managementClusterKubeContext string, provider Provider) {
-	err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
+func ManagementClusterCreationFailureTasks(ctx context.Context, r ClusterTestRunner, managementClusterName, kubeConfigPath, managementClusterKubeContext string, provider Provider) {
+	err := r.CollectManagementClusterDiagnostics(managementClusterName)
 	if err != nil {
 		log.Errorf("error while collecting diagnostics of management cluster: %v", err)
 	}
@@ -191,7 +191,7 @@ func ManagementClusterCreationFailureTasks(ctx context.Context, managementCluste
 		log.Errorf("error while cleaning up docker bootstrap cluster of the management cluster: %v", err)
 	}
 
-	err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
+	err = r.DeleteContext(kubeConfigPath, managementClusterKubeContext)
 	if err != nil {
 		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 	}
@@ -202,8 +202,8 @@ func ManagementClusterCreationFailureTasks(ctx context.Context, managementCluste
 	}
 }
 
-func WorkloadClusterCreationFailureTasks(ctx context.Context, managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext string, provider Provider) {
-	err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider.Name())
+func WorkloadClusterCreationFailureTasks(ctx context.Context, r ClusterTestRunner, managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext string, provider Provider) {
+	err := r.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider.Name())
 	if err != nil {
 		log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
 	}
@@ -213,7 +213,7 @@ func WorkloadClusterCreationFailureTasks(ctx context.Context, managementClusterN
 		log.Errorf("error while cleaning up the management cluster: %v", err)
 	}
 
-	err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
+	err = r.DeleteContext(kubeConfigPath, managementClusterKubeContext)
 	if err != nil {
 		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 	}
@@ -223,7 +223,7 @@ func WorkloadClusterCreationFailureTasks(ctx context.Context, managementClusterN
 		log.Errorf("error while cleaning up the workload cluster: %v", err)
 	}
 
-	err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
+	err = r.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
 	if err != nil {
 		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 	}
@@ -252,7 +252,7 @@ func RunProviderTest(provider Provider) {
 	if err != nil {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
-		ManagementClusterCreationFailureTasks(context.TODO(), managementClusterName, kubeConfigPath, managementClusterKubeContext, provider)
+		ManagementClusterCreationFailureTasks(context.TODO(), r, managementClusterName, kubeConfigPath, managementClusterKubeContext, provider)
 		log.Fatal("Summary: error while running management cluster: %v", runManagementClusterErr)
 	}
 
@@ -275,7 +275,7 @@ func RunProviderTest(provider Provider) {
 		runWorkloadClusterErr := err
 		log.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
 
-		WorkloadClusterCreationFailureTasks(context.TODO(), managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext, provider)
+		WorkloadClusterCreationFailureTasks(context.TODO(), r, managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext, provider)
 
 		log.Fatal("error while running workload cluster: %v", runWorkloadClusterErr)
 	}
