@@ -10,7 +10,6 @@ import (
 	"runtime"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/docker"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
@@ -148,20 +147,6 @@ func listWorkloadClusters() WorkloadClusters {
 	return workloadClusters
 }
 
-func CleanupDockerBootstrapCluster(managementClusterName string) error {
-	bootstrapClusterDockerContainerName, err := tanzu.GetBootstrapClusterDockerContainerNameForManagementCluster(managementClusterName)
-	if err != nil {
-		return fmt.Errorf("error getting bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
-	}
-
-	err = docker.ForceRemoveRunningContainer(bootstrapClusterDockerContainerName)
-	if err != nil {
-		return fmt.Errorf("error force stopping and removing bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
-	}
-
-	return nil
-}
-
 func PlatformSupportCheck() {
 	if runtime.GOOS == platforms.WINDOWS {
 		log.Warn("Warning: This test has been tested only on Linux and Mac OS till now. Support for Windows has not been tested, so it's experimental and not guaranteed to work!")
@@ -186,7 +171,7 @@ func ManagementClusterCreationFailureTasks(ctx context.Context, r ClusterTestRun
 		log.Errorf("error while collecting diagnostics of management cluster: %v", err)
 	}
 
-	err = CleanupDockerBootstrapCluster(managementClusterName)
+	err = r.CleanupDockerBootstrapCluster(managementClusterName)
 	if err != nil {
 		log.Errorf("error while cleaning up docker bootstrap cluster of the management cluster: %v", err)
 	}

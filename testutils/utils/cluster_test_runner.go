@@ -28,6 +28,7 @@ type ClusterTestRunner interface {
 	CollectManagementClusterDiagnostics(managementClusterName string) error
 	CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName string, workloadClusterName string, workloadClusterInfra string) error
 	DeleteContext(kubeConfigPath string, contextName string) error
+	CleanupDockerBootstrapCluster(managementClusterName string) error
 }
 
 type DefaultClusterTestRunner struct{}
@@ -278,4 +279,18 @@ func (r DefaultClusterTestRunner) CollectManagementClusterAndWorkloadClusterDiag
 
 func (r DefaultClusterTestRunner) DeleteContext(kubeConfigPath string, contextName string) error {
 	return kubeclient.DeleteContext(kubeConfigPath, contextName)
+}
+
+func (r DefaultClusterTestRunner) CleanupDockerBootstrapCluster(managementClusterName string) error {
+	bootstrapClusterDockerContainerName, err := tanzu.GetBootstrapClusterDockerContainerNameForManagementCluster(managementClusterName)
+	if err != nil {
+		return fmt.Errorf("error getting bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
+	}
+
+	err = docker.ForceRemoveRunningContainer(bootstrapClusterDockerContainerName)
+	if err != nil {
+		return fmt.Errorf("error force stopping and removing bootstrap cluster docker container name for the management cluster %s: %v", managementClusterName, err)
+	}
+
+	return nil
 }
