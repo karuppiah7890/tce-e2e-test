@@ -17,3 +17,8 @@ tidy:
 
 # TODO: Add targets to do linting - golangci-lint (staticcheck etc), go.mod and go.sum being up to date,
 # custom linting - using internal log package and not std or other log package
+
+mockgen:
+	go install github.com/golang/mock/mockgen@v1.6.0
+	mockgen -source testutils/utils/cluster_test_runner.go -destination testutils/utils/mock_utils/cluster_test_runner.go
+	mockgen -source testutils/utils/infraproviders.go -destination testutils/utils/mock_utils/infraproviders.go

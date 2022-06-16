@@ -12,6 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.26.5
 	github.com/cli/cli/v2 v2.10.1
 	github.com/docker/docker v20.10.14+incompatible
+	github.com/golang/mock v1.6.0
 	github.com/vmware-tanzu/tanzu-framework v0.20.0
 	github.com/vmware/govmomi v0.27.4
 	go.uber.org/zap v1.21.0
