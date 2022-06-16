@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,10 +20,8 @@ type ClusterTestRunner interface {
 	GetKubeContextForTanzuCluster(clusterName string) string
 	GetKubeConfigPath() (string, error)
 	RunCluster(clusterName string, provider Provider, clusterType ClusterType) error
-	ManagementClusterCreationFailureTasks(ctx context.Context, managementClusterName, kubeConfigPath, managementClusterKubeContext string, provider Provider)
 	GetClusterKubeConfig(clusterName string, provider Provider, clusterType ClusterType)
 	PrintClusterInformation(kubeConfigPath string, kubeContext string) error
-	WorkloadClusterCreationFailureTasks(ctx context.Context, managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext string, provider Provider)
 	CheckWorkloadClusterIsRunning(workloadClusterName string)
 	DeleteCluster(clusterName string, provider Provider, clusterType ClusterType) error
 	WaitForWorkloadClusterDeletion(workloadClusterName string)
@@ -102,28 +99,6 @@ func (r DefaultClusterTestRunner) RunCluster(clusterName string, provider Provid
 	return nil
 }
 
-func (r DefaultClusterTestRunner) ManagementClusterCreationFailureTasks(ctx context.Context, managementClusterName, kubeConfigPath, managementClusterKubeContext string, provider Provider) {
-	err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
-	if err != nil {
-		log.Errorf("error while collecting diagnostics of management cluster: %v", err)
-	}
-
-	err = CleanupDockerBootstrapCluster(managementClusterName)
-	if err != nil {
-		log.Errorf("error while cleaning up docker bootstrap cluster of the management cluster: %v", err)
-	}
-
-	err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
-	if err != nil {
-		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
-	}
-
-	err = provider.CleanupCluster(ctx, managementClusterName)
-	if err != nil {
-		log.Errorf("error while cleaning up the management cluster: %v", err)
-	}
-}
-
 func (r DefaultClusterTestRunner) GetClusterKubeConfig(clusterName string, provider Provider, clusterType ClusterType) {
 	// TODO: Do we really need the secrets here?
 	envVars := tanzu.TanzuConfigToEnvVars(provider.GetTanzuConfig(clusterName))
@@ -198,33 +173,6 @@ func (r DefaultClusterTestRunner) PrintClusterInformation(kubeConfigPath string,
 	}
 
 	return nil
-}
-
-func (r DefaultClusterTestRunner) WorkloadClusterCreationFailureTasks(ctx context.Context, managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext string, provider Provider) {
-	err := tanzu.CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName, workloadClusterName, provider.Name())
-	if err != nil {
-		log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
-	}
-
-	err = provider.CleanupCluster(ctx, managementClusterName)
-	if err != nil {
-		log.Errorf("error while cleaning up the management cluster: %v", err)
-	}
-
-	err = kubeclient.DeleteContext(kubeConfigPath, managementClusterKubeContext)
-	if err != nil {
-		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
-	}
-
-	err = provider.CleanupCluster(ctx, workloadClusterName)
-	if err != nil {
-		log.Errorf("error while cleaning up the workload cluster: %v", err)
-	}
-
-	err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
-	if err != nil {
-		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
-	}
 }
 
 func (r DefaultClusterTestRunner) CheckWorkloadClusterIsRunning(workloadClusterName string) {
