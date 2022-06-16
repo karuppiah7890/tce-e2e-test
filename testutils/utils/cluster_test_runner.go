@@ -22,9 +22,9 @@ type ClusterTestRunner interface {
 	RunCluster(clusterName string, provider Provider, clusterType ClusterType) error
 	GetClusterKubeConfig(clusterName string, provider Provider, clusterType ClusterType)
 	PrintClusterInformation(kubeConfigPath string, kubeContext string) error
-	CheckWorkloadClusterIsRunning(workloadClusterName string)
+	CheckWorkloadClusterIsRunning(workloadClusterName string) error
 	DeleteCluster(clusterName string, provider Provider, clusterType ClusterType) error
-	WaitForWorkloadClusterDeletion(workloadClusterName string)
+	WaitForWorkloadClusterDeletion(workloadClusterName string) error
 	CollectManagementClusterDiagnostics(managementClusterName string) error
 	CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName string, workloadClusterName string, workloadClusterInfra string) error
 	DeleteContext(kubeConfigPath string, contextName string) error
@@ -179,11 +179,14 @@ func (r DefaultClusterTestRunner) PrintClusterInformation(kubeConfigPath string,
 	return nil
 }
 
-func (r DefaultClusterTestRunner) CheckWorkloadClusterIsRunning(workloadClusterName string) {
+func (r DefaultClusterTestRunner) CheckWorkloadClusterIsRunning(workloadClusterName string) error {
 	// TODO: Should this function use a loop and wait (with timeout) for workload cluster to show up in the list
 	// of workload clusters and be in running state? Or will Tanzu exit workload cluster creation
 	// command only when workload cluster shows up in the list and is in running state? Gotta check
-	workloadClusters := listWorkloadClusters()
+	workloadClusters, err := listWorkloadClusters()
+	if err != nil {
+		return fmt.Errorf("error occurred while listing workload clusters: %v", err)
+	}
 
 	isClusterPresent := false
 	clusterStatus := ""
@@ -196,16 +199,16 @@ func (r DefaultClusterTestRunner) CheckWorkloadClusterIsRunning(workloadClusterN
 	}
 
 	if !isClusterPresent {
-		// Return errors for caller to handle maybe? Instead of abrupt stop?
-		log.Fatalf("Workload cluster %s is not present in the list of workload clusters", workloadClusterName)
+		return fmt.Errorf("error: workload cluster %s is not present in the list of workload clusters", workloadClusterName)
 	}
 
 	if clusterStatus != "running" {
 		// Return errors for caller to handle maybe? Instead of abrupt stop?
-		log.Fatalf("Workload cluster %s is not in running status, it is in %s status", workloadClusterName, clusterStatus)
+		return fmt.Errorf("error: workload cluster %s is not in running status, it is in %s status", workloadClusterName, clusterStatus)
 	}
 
 	log.Infof("Workload cluster %s is running successfully\n", workloadClusterName)
+	return nil
 }
 
 func (r DefaultClusterTestRunner) DeleteCluster(clusterName string, provider Provider, clusterType ClusterType) error {
@@ -241,11 +244,14 @@ func (r DefaultClusterTestRunner) DeleteCluster(clusterName string, provider Pro
 	return nil
 }
 
-func (r DefaultClusterTestRunner) WaitForWorkloadClusterDeletion(workloadClusterName string) {
+func (r DefaultClusterTestRunner) WaitForWorkloadClusterDeletion(workloadClusterName string) error {
 	// TODO: Use timer for timeout and ticker for polling every few seconds
 	// instead of using sleep
 	for i := 0; i < 60; i++ {
-		workloadClusters := listWorkloadClusters()
+		workloadClusters, err := listWorkloadClusters()
+		if err != nil {
+			return fmt.Errorf("error occurred while listing workload clusters: %v", err)
+		}
 
 		isClusterPresent := false
 
@@ -259,14 +265,13 @@ func (r DefaultClusterTestRunner) WaitForWorkloadClusterDeletion(workloadCluster
 			log.Info("Waiting for workload cluster to get deleted")
 		} else {
 			log.Infof("Workload cluster %s successfully deleted\n", workloadClusterName)
-			return
+			return nil
 		}
 
 		time.Sleep(10 * time.Second)
 	}
 
-	// TODO: maybe return error instead of fatal stop?
-	log.Fatalf("Timed out waiting for workload cluster %s to get deleted", workloadClusterName)
+	return fmt.Errorf("timed out waiting for workload cluster %s to get deleted", workloadClusterName)
 }
 
 func (r DefaultClusterTestRunner) CollectManagementClusterDiagnostics(managementClusterName string) error {

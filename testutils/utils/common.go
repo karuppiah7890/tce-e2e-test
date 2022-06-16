@@ -241,7 +241,7 @@ func RunProviderTest(provider Provider, r ClusterTestRunner) error {
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
 		ManagementClusterCreationFailureTasks(context.TODO(), r, managementClusterName, kubeConfigPath, managementClusterKubeContext, provider)
-		return fmt.Errorf("Summary: error while running management cluster: %v", runManagementClusterErr)
+		return fmt.Errorf("error while running management cluster: %v", runManagementClusterErr)
 	}
 
 	// TODO: Handle errors
@@ -305,7 +305,10 @@ func RunProviderTest(provider Provider, r ClusterTestRunner) error {
 	// TODO: Handle errors during waiting for cluster deletion.
 	// We could retry in some cases, to just list the workload clusters.
 	// If all retries fail, cleanup management cluster and then cleanup workload cluster
-	r.WaitForWorkloadClusterDeletion(workloadClusterName)
+	err = r.WaitForWorkloadClusterDeletion(workloadClusterName)
+	if err != nil {
+		return fmt.Errorf("error while waiting for workload cluster deletion: %v", err)
+	}
 
 	err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
 	if err != nil {

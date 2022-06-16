@@ -35,9 +35,11 @@ func (m *MockClusterTestRunner) EXPECT() *MockClusterTestRunnerMockRecorder {
 }
 
 // CheckWorkloadClusterIsRunning mocks base method.
-func (m *MockClusterTestRunner) CheckWorkloadClusterIsRunning(workloadClusterName string) {
+func (m *MockClusterTestRunner) CheckWorkloadClusterIsRunning(workloadClusterName string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CheckWorkloadClusterIsRunning", workloadClusterName)
+	ret := m.ctrl.Call(m, "CheckWorkloadClusterIsRunning", workloadClusterName)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // CheckWorkloadClusterIsRunning indicates an expected call of CheckWorkloadClusterIsRunning.
@@ -213,9 +215,11 @@ func (mr *MockClusterTestRunnerMockRecorder) RunCluster(clusterName, provider, c
 }
 
 // WaitForWorkloadClusterDeletion mocks base method.
-func (m *MockClusterTestRunner) WaitForWorkloadClusterDeletion(workloadClusterName string) {
+func (m *MockClusterTestRunner) WaitForWorkloadClusterDeletion(workloadClusterName string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "WaitForWorkloadClusterDeletion", workloadClusterName)
+	ret := m.ctrl.Call(m, "WaitForWorkloadClusterDeletion", workloadClusterName)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // WaitForWorkloadClusterDeletion indicates an expected call of WaitForWorkloadClusterDeletion.
