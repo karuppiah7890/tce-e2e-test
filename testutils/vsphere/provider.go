@@ -12,9 +12,20 @@ type Provider struct {
 	testSecrets TestSecrets
 }
 
-func (provider *Provider) CheckRequiredEnvVars() bool {
-	CheckRequiredVsphereEnvVars()
-	return true
+func (provider *Provider) RequiredEnvVars() []string {
+	return []string{
+		ManagementApiServerEndpoint,
+		WorkloadApiServerEndpoint,
+		SshKeys,
+		Url,
+		Username,
+		Password,
+		Datastore,
+		Datacenter,
+		VmFolder,
+		Network,
+		ResourcePool,
+	}
 }
 
 func (provider *Provider) Name() string {

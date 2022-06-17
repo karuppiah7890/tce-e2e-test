@@ -1,8 +1,10 @@
 package aws
 
 import (
-	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"os"
+
+	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 )
 
 const AccountID = "AWS_ACCOUNT_ID"
@@ -22,7 +24,7 @@ type TestSecrets struct {
 }
 
 func ExtractAwsTestSecretsFromEnvVars() TestSecrets {
-	CheckRequiredAwsEnvVars()
+	utils.CheckRequiredEnvVars(PROVIDER)
 
 	log.Info("Extracting AWS test secrets from environment variables")
 

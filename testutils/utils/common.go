@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"runtime"
 
+	"github.com/karuppiah7890/tce-e2e-test/testutils"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
@@ -216,16 +217,30 @@ func WorkloadClusterCreationFailureTasks(ctx context.Context, r ClusterTestRunne
 	}
 }
 
+func CheckRequiredEnvVars(provider Provider) error {
+	requiredEnvVars := provider.RequiredEnvVars()
+	errs := testutils.CheckRequiredEnvVars(requiredEnvVars)
+
+	if len(errs) != 0 {
+		return fmt.Errorf("%v", errs)
+	}
+
+	return nil
+}
+
 func RunProviderTest(provider Provider, r ClusterTestRunner) error {
 	r.RunChecks()
 
-	provider.CheckRequiredEnvVars()
+	err := CheckRequiredEnvVars(provider)
+	if err != nil {
+		return fmt.Errorf("errors while checking required environment variables: %v", err)
+	}
 
 	provider.Init()
 
 	managementClusterName, workloadClusterName := r.GetRandomClusterNames()
 
-	err := provider.PreClusterCreationTasks(managementClusterName, ManagementClusterType)
+	err = provider.PreClusterCreationTasks(managementClusterName, ManagementClusterType)
 	if err != nil {
 		return fmt.Errorf("error while executing pre-cluster creation tasks for %v cluster: %v", managementClusterName, err)
 	}

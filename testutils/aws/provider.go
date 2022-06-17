@@ -15,9 +15,15 @@ type Provider struct {
 	testSecrets TestSecrets
 }
 
-func (provider *Provider) CheckRequiredEnvVars() bool {
-	CheckRequiredAwsEnvVars()
-	return true
+func (provider *Provider) RequiredEnvVars() []string {
+	return []string{
+		AccountID,
+		AccessKey,
+		SecretKey,
+		B64Creds,
+		SshPublicName,
+		Region,
+	}
 }
 
 func (provider *Provider) Name() string {

@@ -13,8 +13,7 @@ import (
 type Provider interface {
 	Name() string
 	Init() error
-	// TODO: Change CheckRequiredEnvVars to GetListOfRequiredEnvVars ? And do check in a common manner?
-	CheckRequiredEnvVars() bool
+	RequiredEnvVars() []string
 	PreClusterCreationTasks(clusterName string, clusterType ClusterType) error
 	CleanupCluster(ctx context.Context, clusterName string) error
 	GetTanzuConfig(clusterName string) tanzu.TanzuConfig

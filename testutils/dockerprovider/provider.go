@@ -10,8 +10,8 @@ import (
 // TODO: Change name?
 type Provider struct{}
 
-func (provider *Provider) CheckRequiredEnvVars() bool {
-	return true
+func (provider *Provider) RequiredEnvVars() []string {
+	return []string{}
 }
 
 func (provider *Provider) Name() string {

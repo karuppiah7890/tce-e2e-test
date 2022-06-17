@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 )
 
 const TenantIDEnvVarName = "AZURE_TENANT_ID"
@@ -21,7 +22,7 @@ type TestSecrets struct {
 }
 
 func ExtractAzureTestSecretsFromEnvVars() TestSecrets {
-	CheckRequiredAzureEnvVars()
+	utils.CheckRequiredEnvVars(PROVIDER)
 
 	log.Info("Extracting Azure test secrets from environment variables")
 
