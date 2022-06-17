@@ -119,7 +119,7 @@ func sendSlack(heading, details, status, url, runtime, created string) {
 
 func (g *GitHub) listWorkflows() ([]*github.WorkflowRuns, error) {
 	days := timeNow.AddDate(0, 0, -1).Format("2006-01-02")
-	opts := &github.ListWorkflowRunsOptions{Status: "failure", Created: fmt.Sprint(">", days)}
+	opts := &github.ListWorkflowRunsOptions{Created: fmt.Sprint(">", days)}
 	//opts := &github.ListWorkflowRunsOptions{Status: "failure", Created: ">2022-05-19"}
 	opt := &github.ListOptions{}
 	workflows, _, err := g.client.Actions.ListWorkflows(ctx, owner, repo, opt)
