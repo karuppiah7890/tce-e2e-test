@@ -23,23 +23,23 @@ func TestAuthenticatedClient(t *testing.T) {
 	client, err := github.NewAuthenticatedClient("dummy-token")
 
 	if err != nil {
-		log.Fatalf("expected no error while creating authenticated client but got error: %v", err)
+		t.Fatalf("expected no error while creating authenticated client but got error: %v", err)
 	}
 
 	req, err := http.NewRequest(http.MethodGet, "http://dummy-github-server.com/bar", nil)
 
 	if err != nil {
-		log.Fatalf("expected no error while creating dummy test request but got error: %v", err)
+		t.Fatalf("expected no error while creating dummy test request but got error: %v", err)
 	}
 
 	res, err := client.RoundTrip(req)
 
 	if err != nil {
-		log.Fatalf("expected no error while sending request and getting response but got error: %v", err)
+		t.Fatalf("expected no error while sending request and getting response but got error: %v", err)
 	}
 
 	if res.StatusCode != 200 {
-		log.Fatalf("expected response status code to be 200 but got this: %v", res.StatusCode)
+		t.Fatalf("expected response status code to be 200 but got this: %v", res.StatusCode)
 	}
 
 }
