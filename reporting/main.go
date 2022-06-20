@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/google/go-github/v44/github"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"golang.org/x/oauth2"
+	"html/template"
 	"net/http"
 	"os"
 	"strconv"
@@ -24,6 +26,7 @@ type Result struct {
 	BuildType string      `json:"BuildType"`
 	Providers []Providers `json:"Providers"`
 	Plugins   []Plugins   `json:"Plugins"`
+	Packages  []Packages  `json:"Packages"`
 }
 type Providers struct {
 	Name    string `json:"Name"`
@@ -39,6 +42,13 @@ type Plugins struct {
 	Runtime string `json:"Runtime"`
 	Url     string `json:"URL"`
 }
+type Packages struct {
+	Name    string `json:"Name"`
+	Status  string `json:"Status"`
+	Time    string `json:"Created Time"`
+	Runtime string `json:"Runtime"`
+	Url     string `json:"URL"`
+}
 
 const (
 	lookup       = "E2E"
@@ -46,10 +56,16 @@ const (
 	repo         = "community-edition"
 	workflowsEnv = "WORKFLOWS" //To be set as csv values of workflows id
 	pluginEnv    = "PLUGIN"    //To be set as csv values of workflows id
+	token        = "GH_TOKEN"  //To be set as csv values of workflows id
 )
 
 var timeNow = time.Now()
-var client = github.NewClient(nil)
+var ts = oauth2.StaticTokenSource(
+	&oauth2.Token{AccessToken: os.Getenv(token)},
+)
+var tc = oauth2.NewClient(ctx, ts)
+
+var client = github.NewClient(tc)
 var mygh = &GitHub{
 	client: client,
 }
@@ -61,7 +77,7 @@ func main() {
 
 func (ghClient *GitHub) getResults() ([]byte, error) {
 	res := &Result{
-		Date:      fmt.Sprintf("%v", timeNow),
+		Date:      fmt.Sprintf("%v", timeNow.Format(time.RFC822)),
 		Status:    "",
 		BuildType: "daily",
 		Providers: []Providers{},
@@ -76,6 +92,21 @@ func (ghClient *GitHub) getResults() ([]byte, error) {
 	}
 	log.Infof("%s", string(ParseJson))
 	return json.MarshalIndent(res, "", "  ")
+}
+
+func (ghClient *GitHub) getResultsStruct() (Result, error) {
+	res := &Result{
+		Date:      fmt.Sprintf("%v", timeNow.Format(time.RFC822)),
+		Status:    "",
+		BuildType: "daily",
+		Providers: []Providers{},
+	}
+
+	res.Status = "success"
+	res.Providers = mygh.getProviderResults()
+	res.Plugins = mygh.getPluginResults()
+
+	return *res, nil
 }
 
 //Todo Remove Redundant code for provide and plugin
@@ -179,12 +210,32 @@ func (ghClient *GitHub) listWorkflows() ([]*github.WorkflowRuns, error) {
 }
 
 func handleRequests() {
-	http.HandleFunc("/", results)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	port := "8080"
+	log.Infof("Starting HTTP api server on localhost:%s", port)
+	http.HandleFunc("/", home)
+	http.HandleFunc("/viewjson", jsonview)
+	http.HandleFunc("/viewhtml", view)
+
+	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+func home(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Welcome to the HomePage!")
 }
 
-func results(w http.ResponseWriter, r *http.Request) {
+func jsonview(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Trying to get Result for runs ")
 	res, _ := mygh.getResults()
 	w.Write(res)
+}
+func view(w http.ResponseWriter, r *http.Request) {
+	log.Infof("Rendering HTML View")
+	x, _ := mygh.getResultsStruct()
+	t, _ := template.ParseFiles("templates/report.html")
+	err := t.Execute(w, &x)
+	if err != nil {
+		log.Errorf("Something went wrong")
+		return
+	}
+	log.Infof("%v", &x)
+
 }

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Off Report</title>
+</head>
+<style>
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+    .plugin{
+        background-color: antiquewhite;
+    }
+</style>
+<body>
+<h2>{{.BuildType}}</h2>
+<div> Status {{.Status}}</div>
+<div> Date {{.Date}}</div>
+
+
+<h2>Cluster lifecycle on different providers </h2>
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Created Time</th>
+        <th>RunTime</th>
+        <th>URL</th>
+    </tr>
+    {{range .Providers}}
+    <tr>
+        <td>{{.Name}}</td>
+        <td>{{.Status}}</td>
+        <td>{{.Time}}</td>
+        <td>{{.Runtime}}</td>
+        <td>{{.Url}}</td>
+    </tr>
+    {{end}}
+</table>
+
+<h2>Cluster Plugin on different providers </h2>
+
+<table class="plugin">
+    <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Created Time</th>
+        <th>RunTime</th>
+        <th>URL</th>
+    </tr>
+    {{range .Plugins}}
+    <tr>
+        <td>{{.Name}}</td>
+        <td>{{.Status}}</td>
+        <td>{{.Time}}</td>
+        <td>{{.Runtime}}</td>
+        <td>{{.Url}}</td>
+    </tr>
+    {{end}}
+</table>
+
+
+</body>
+</html>
