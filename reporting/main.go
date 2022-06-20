@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/google/go-github/v44/github"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -16,62 +18,122 @@ var ctx = context.Background()
 type GitHub struct {
 	client *github.Client
 }
-type result struct {
-	date      string
-	status    string
-	buildType string
-	jobs      job
+type Result struct {
+	Date      string      `json:"Date"`
+	Status    string      `json:"Status"`
+	BuildType string      `json:"BuildType"`
+	Providers []Providers `json:"Providers"`
+	Plugins   []Plugins   `json:"Plugins"`
 }
-type job struct {
-	name       string
-	status     string
-	time       string
-	runtime    string
-	url        string
-	trigrredBy string
+type Providers struct {
+	Name    string `json:"Name"`
+	Status  string `json:"Status"`
+	Time    string `json:"Created Time"`
+	Runtime string `json:"Runtime"`
+	Url     string `json:"URL"`
+}
+type Plugins struct {
+	Name    string `json:"Name"`
+	Status  string `json:"Status"`
+	Time    string `json:"Created Time"`
+	Runtime string `json:"Runtime"`
+	Url     string `json:"URL"`
 }
 
 const (
-	lookup    = "E2E"
-	owner     = "vmware-tanzu"
-	repo      = "community-edition"
-	workflows = "WORKFLOWS" //To be set as csv values of workflows id
+	lookup       = "E2E"
+	owner        = "vmware-tanzu"
+	repo         = "community-edition"
+	workflowsEnv = "WORKFLOWS" //To be set as csv values of workflows id
+	pluginEnv    = "PLUGIN"    //To be set as csv values of workflows id
 )
 
 var timeNow = time.Now()
+var client = github.NewClient(nil)
+var mygh = &GitHub{
+	client: client,
+}
 
 func main() {
 	log.InitLogger("reporting")
-	client := github.NewClient(nil)
-	//workflows := os.Getenv(workflows)
-	mygh := &GitHub{
-		client: client,
+	handleRequests()
+}
+
+func (ghClient *GitHub) getResults() ([]byte, error) {
+	res := &Result{
+		Date:      fmt.Sprintf("%v", timeNow),
+		Status:    "",
+		BuildType: "daily",
+		Providers: []Providers{},
 	}
-	workflows := strings.Split(os.Getenv(workflows), ",")
+
+	res.Status = "success"
+	res.Providers = mygh.getProviderResults()
+	res.Plugins = mygh.getPluginResults()
+	ParseJson, err := json.Marshal(res)
+	if err != nil {
+		log.Errorf("Error %s ", err)
+	}
+	log.Infof("%s", string(ParseJson))
+	return json.MarshalIndent(res, "", "  ")
+}
+
+//Todo Remove Redundant code for provide and plugin
+func (ghClient *GitHub) getProviderResults() []Providers {
+	workflows := strings.Split(os.Getenv(workflowsEnv), ",")
 	log.Infof("%s", workflows)
+	w := []Providers{}
 	for _, workflow := range workflows {
 		log.Infof("checking for workflow id %s", workflow)
 		w_id, _ := strconv.ParseInt(workflow, 10, 64)
-		run, err := mygh.listWorkflowFromId(w_id)
+		run, err := ghClient.listWorkflowFromId(w_id)
 		if err != nil {
 			log.Errorf("Error %s ", err)
 		}
 		y := run.WorkflowRuns[1]
 		log.Infof("%s %s %s %s", *y.Conclusion, *y.Name, *y.CreatedAt, *y.HTMLURL)
+		runtime := y.UpdatedAt.Time.Sub(y.CreatedAt.Time).Minutes()
+		x := Providers{
+			Name:    *y.Name,
+			Status:  *y.Conclusion,
+			Time:    fmt.Sprintf("%s", *y.CreatedAt),
+			Runtime: fmt.Sprintf("%.1f Minutes", runtime),
+			Url:     *y.HTMLURL,
+		}
+		w = append(w, x)
 	}
-	//result, _ := mygh.listWorkflows()
-	//log.Infof("%d", result)
-	//for _, runs := range result {
-	//	for _, y := range runs.WorkflowRuns {
-	//		runtime := y.UpdatedAt.Time.Sub(y.CreatedAt.Time).Minutes()
-	//		log.Infof("%s %s %s %s %f", *y.Conclusion, *y.Name, *y.CreatedAt, *y.HTMLURL, runtime)
-	//
-	//	}
-	//}
+	return w
 
 }
 
-func (g *GitHub) listWorkflowFromId(workflowId int64) (*github.WorkflowRuns, error) {
+//Todo Remove Redundant code for provide and plugin
+func (ghClient *GitHub) getPluginResults() []Plugins {
+	workflows := strings.Split(os.Getenv(pluginEnv), ",")
+	log.Infof("%s", workflows)
+	w := []Plugins{}
+	for _, workflow := range workflows {
+		log.Infof("checking for workflow id %s", workflow)
+		w_id, _ := strconv.ParseInt(workflow, 10, 64)
+		run, err := ghClient.listWorkflowFromId(w_id)
+		if err != nil {
+			log.Errorf("Error %s ", err)
+		}
+		y := run.WorkflowRuns[1]
+		log.Infof("%s %s %s %s", *y.Conclusion, *y.Name, *y.CreatedAt, *y.HTMLURL)
+		runtime := y.UpdatedAt.Time.Sub(y.CreatedAt.Time).Minutes()
+		x := Plugins{
+			Name:    *y.Name,
+			Status:  *y.Conclusion,
+			Time:    fmt.Sprintf("%s", *y.CreatedAt),
+			Runtime: fmt.Sprintf("%.1f Minutes", runtime),
+			Url:     *y.HTMLURL,
+		}
+		w = append(w, x)
+	}
+	return w
+}
+
+func (ghClient *GitHub) listWorkflowFromId(workflowId int64) (*github.WorkflowRuns, error) {
 	opts := &github.ListWorkflowRunsOptions{
 		Actor:       "",
 		Branch:      "",
@@ -80,7 +142,7 @@ func (g *GitHub) listWorkflowFromId(workflowId int64) (*github.WorkflowRuns, err
 		Created:     "",
 		ListOptions: github.ListOptions{},
 	}
-	runs, _, err := g.client.Actions.ListWorkflowRunsByID(ctx, "vmware-tanzu", "community-edition", workflowId, opts)
+	runs, _, err := ghClient.client.Actions.ListWorkflowRunsByID(ctx, "vmware-tanzu", "community-edition", workflowId, opts)
 	if err != nil {
 		log.Errorf("Workflows Listing failed. Err: %v\n", err)
 		return nil, err
@@ -89,12 +151,12 @@ func (g *GitHub) listWorkflowFromId(workflowId int64) (*github.WorkflowRuns, err
 	return runs, nil
 }
 
-func (g *GitHub) listWorkflows() ([]*github.WorkflowRuns, error) {
+func (ghClient *GitHub) listWorkflows() ([]*github.WorkflowRuns, error) {
 	days := timeNow.AddDate(0, 0, -1).Format("2006-01-02")
 	opts := &github.ListWorkflowRunsOptions{Status: "failure", Created: fmt.Sprint(">", days)}
 	//opts := &github.ListWorkflowRunsOptions{Status: "failure", Created: ">2022-05-19"}
 	opt := &github.ListOptions{}
-	workflows, _, err := g.client.Actions.ListWorkflows(ctx, owner, repo, opt)
+	workflows, _, err := ghClient.client.Actions.ListWorkflows(ctx, owner, repo, opt)
 	if err != nil {
 		log.Errorf("Workflows Listing failed. Err: %v\n", err)
 		return nil, err
@@ -103,7 +165,7 @@ func (g *GitHub) listWorkflows() ([]*github.WorkflowRuns, error) {
 	for _, workflow := range workflows.Workflows {
 		if strings.Contains(*workflow.Name, lookup) {
 			log.Infof("%s %d", *workflow.Name, *workflow.ID)
-			runs, _, err := g.client.Actions.ListWorkflowRunsByID(ctx, owner, repo, *workflow.ID, opts)
+			runs, _, err := ghClient.client.Actions.ListWorkflowRunsByID(ctx, owner, repo, *workflow.ID, opts)
 			if err != nil {
 				log.Errorf("Workflows Listing failed. Err: %v\n", err)
 				return nil, err
@@ -114,4 +176,15 @@ func (g *GitHub) listWorkflows() ([]*github.WorkflowRuns, error) {
 		}
 	}
 	return TceWorkflow, nil
+}
+
+func handleRequests() {
+	http.HandleFunc("/", results)
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func results(w http.ResponseWriter, r *http.Request) {
+	log.Infof("Trying to get Result for runs ")
+	res, _ := mygh.getResults()
+	w.Write(res)
 }
