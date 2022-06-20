@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/dockerprovider"
@@ -11,7 +10,7 @@ import (
 )
 
 func TestDockerManagementAndWorkloadCluster(t *testing.T) {
-	log.InitLogger(fmt.Sprintf("docker-mgmt-wkld-e2e"))
+	log.InitLogger("docker-mgmt-wkld-e2e")
 
 	r := utils.DefaultClusterTestRunner{}
 	utils.RunProviderTest(dockerprovider.PROVIDER, r)

@@ -36,20 +36,6 @@ func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
 	return m.recorder
 }
 
-// CheckRequiredEnvVars mocks base method.
-func (m *MockProvider) CheckRequiredEnvVars() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckRequiredEnvVars")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// CheckRequiredEnvVars indicates an expected call of CheckRequiredEnvVars.
-func (mr *MockProviderMockRecorder) CheckRequiredEnvVars() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRequiredEnvVars", reflect.TypeOf((*MockProvider)(nil).CheckRequiredEnvVars))
-}
-
 // CleanupCluster mocks base method.
 func (m *MockProvider) CleanupCluster(ctx context.Context, clusterName string) error {
 	m.ctrl.T.Helper()
@@ -118,4 +104,18 @@ func (m *MockProvider) PreClusterCreationTasks(clusterName string, clusterType u
 func (mr *MockProviderMockRecorder) PreClusterCreationTasks(clusterName, clusterType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PreClusterCreationTasks", reflect.TypeOf((*MockProvider)(nil).PreClusterCreationTasks), clusterName, clusterType)
+}
+
+// RequiredEnvVars mocks base method.
+func (m *MockProvider) RequiredEnvVars() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RequiredEnvVars")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// RequiredEnvVars indicates an expected call of RequiredEnvVars.
+func (mr *MockProviderMockRecorder) RequiredEnvVars() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequiredEnvVars", reflect.TypeOf((*MockProvider)(nil).RequiredEnvVars))
 }

@@ -22,7 +22,7 @@ func TestRunProviderTest(t *testing.T) {
 		gomock.InOrder(
 			r.EXPECT().RunChecks(),
 
-			provider.EXPECT().CheckRequiredEnvVars(),
+			provider.EXPECT().RequiredEnvVars(),
 
 			provider.EXPECT().Init(),
 
@@ -66,7 +66,7 @@ func TestRunProviderTest(t *testing.T) {
 		gomock.InOrder(
 			r.EXPECT().RunChecks(),
 
-			provider.EXPECT().CheckRequiredEnvVars(),
+			provider.EXPECT().RequiredEnvVars(),
 
 			provider.EXPECT().Init(),
 

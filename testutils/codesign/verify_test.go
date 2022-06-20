@@ -12,12 +12,11 @@ import (
 )
 
 func TestVerify(t *testing.T) {
-
 	log.InitLogger("verify-binary")
 
 	testDir, err := os.MkdirTemp(os.TempDir(), "verify test")
 	if err != nil {
-		log.Fatalf("expected no error while creating temporary directory for test, but got error: %v", err)
+		t.Fatalf("expected no error while creating temporary directory for test, but got error: %v", err)
 	}
 
 	// Below is for Darwin binaries
@@ -26,13 +25,13 @@ func TestVerify(t *testing.T) {
 		artifactPath := filepath.Join(testDir, "tanzu-cli-darwin-amd64.tar.gz")
 		err = download.DownloadFileFromUrl("https://github.com/vmware-tanzu/tanzu-framework/releases/download/v0.21.0/tanzu-cli-darwin-amd64.tar.gz", artifactPath)
 		if err != nil {
-			log.Fatalf("expected no error while downloading artifact, but got error: %v", err)
+			t.Fatalf("expected no error while downloading artifact, but got error: %v", err)
 		}
 		extract.Extract(artifactPath, testDir)
 		binPath := filepath.Join(testDir, "v0.21.0", "tanzu-core-darwin_amd64")
 		err = codesign.Verify(binPath)
 		if err != nil {
-			log.Fatalf("expected no error but got error: %v", err)
+			t.Fatalf("expected no error but got error: %v", err)
 		}
 	})
 
@@ -40,18 +39,17 @@ func TestVerify(t *testing.T) {
 		artifactPath := filepath.Join(testDir, "kubectl")
 		err = download.DownloadFileFromUrl("https://dl.k8s.io/v1.24.0/bin/darwin/amd64/kubectl", artifactPath)
 		if err != nil {
-			log.Fatalf("expected no error while downloading artifact, but got error: %v", err)
+			t.Fatalf("expected no error while downloading artifact, but got error: %v", err)
 		}
 		binPath := filepath.Join(testDir, "kubectl")
 		err := codesign.Verify(binPath)
 		if err == nil {
-			log.Fatalf("expected error but got no error")
+			t.Fatalf("expected error but got no error")
 		}
 
 		// TODO: verify the error message content because the error should be because of signing issues and not due
 		// to any other error
 	})
-
 
 	// TODO: Test Windows binaries - give no error for signed binary and error for unsigned binary. Check for file paths with space in the name
 

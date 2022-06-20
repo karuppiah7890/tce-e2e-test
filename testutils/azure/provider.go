@@ -15,9 +15,14 @@ type Provider struct {
 	testSecrets TestSecrets
 }
 
-func (provider *Provider) CheckRequiredEnvVars() bool {
-	CheckRequiredAzureEnvVars()
-	return true
+func (provider *Provider) RequiredEnvVars() []string {
+	return []string{
+		TenantIDEnvVarName,
+		SubscriptionIDEnvVarName,
+		ClientIDEnvVarName,
+		ClientSecretEnvVarName,
+		SshPublicKeyBase64EnvVarName,
+	}
 }
 
 func (provider *Provider) Name() string {

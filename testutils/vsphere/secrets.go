@@ -1,8 +1,10 @@
 package vsphere
 
 import (
-	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"os"
+
+	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 )
 
 const ManagementApiServerEndpoint = "VSPHERE_MANAGEMENT_CLUSTER_ENDPOINT"
@@ -32,7 +34,7 @@ type TestSecrets struct {
 }
 
 func ExtractVsphereTestSecretsFromEnvVars() TestSecrets {
-	CheckRequiredVsphereEnvVars()
+	utils.CheckRequiredEnvVars(PROVIDER)
 
 	log.Info("Extracting AWS test secrets from environment variables")
 

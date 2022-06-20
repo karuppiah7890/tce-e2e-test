@@ -17,7 +17,7 @@ func TestFetchTceRelease(t *testing.T) {
 	release, err := github.FetchTceRelease("v0.12.1", os.Getenv("GITHUB_TOKEN"))
 
 	if err != nil {
-		log.Fatalf("expected no error but got error while fetching TCE release: %v", err)
+		t.Fatalf("expected no error but got error while fetching TCE release: %v", err)
 	}
 
 	// Maybe use mock to check if token is set? And not send request to actual GitHub server.
