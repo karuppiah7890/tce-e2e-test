@@ -43,11 +43,12 @@ type Plugins struct {
 	Url     string `json:"URL"`
 }
 type Packages struct {
-	Name    string `json:"Name"`
-	Status  string `json:"Status"`
-	Time    string `json:"Created Time"`
-	Runtime string `json:"Runtime"`
-	Url     string `json:"URL"`
+	Name     string `json:"Name"`
+	Status   string `json:"Status"`
+	Time     string `json:"Created Time"`
+	Runtime  string `json:"Runtime"`
+	Provider string `json:"Provider"`
+	Url      string `json:"URL"`
 }
 
 const (
