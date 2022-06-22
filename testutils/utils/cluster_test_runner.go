@@ -275,7 +275,7 @@ func (r DefaultClusterTestRunner) WaitForWorkloadClusterDeletion(workloadCluster
 }
 
 func (r DefaultClusterTestRunner) CollectManagementClusterDiagnostics(managementClusterName string) error {
-	return nil
+	return tanzu.CollectManagementClusterDiagnostics(managementClusterName)
 }
 
 func (r DefaultClusterTestRunner) CollectManagementClusterAndWorkloadClusterDiagnostics(managementClusterName string, workloadClusterName string, workloadClusterInfra string) error {
