@@ -13,7 +13,7 @@
 
     td, th {
         border: 1px solid #dddddd;
-        text-align: left;
+        text-align: center;
         padding: 8px;
     }
 
@@ -29,14 +29,44 @@
     .green{
         background-color: greenyellow;
     }
+    .title{
+        color: blue;
+        margin: auto;
+        width: 60%;
+        padding: 10px;
+        text-align: center;
+
+    }
+    table.main{
+        font-family: arial, sans-serif;
+        /*border-collapse: collapse;*/
+        border: none ;
+        width: 50%;
+        padding: 10px;
+        margin: auto;
+    }
+
 </style>
 <body>
-<h2>{{.BuildType}}</h2>
-<div> Status {{.Status}}</div>
-<div> Date {{.Date}}</div>
+<h1 class="title">Sign Off Report</h1>
 
-
-<h2>Cluster lifecycle on different providers </h2>
+<table class="main">
+    <tr>
+        <th>Build Type</th>
+        <th>Status</th>
+        <th>Date</th>
+    </tr>
+    <tr>
+        <td>{{.BuildType}}</td>
+        {{if eq .Status "success"}}
+        <td class="green">{{.Status}}</td>
+        {{else}}
+        <td class="red">{{.Status}}</td>
+        {{end}}
+        <td>{{.Date}}</td>
+    </tr>
+</table>
+<h2 class="title">Cluster lifecycle on different providers </h2>
 
 <table>
     <tr>
@@ -61,7 +91,7 @@
     {{end}}
 </table>
 
-<h2>Plugins</h2>
+<h2 class="title">Plugins</h2>
 
 <table class="plugin">
     <tr>
@@ -87,7 +117,7 @@
 </table>
 
 {{ if .Packages}}
-<h2>Packages</h2>
+<h2 class="title">Packages</h2>
 
 <table class="packages">
     <tr>

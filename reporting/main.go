@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/google/go-github/v44/github"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
@@ -52,7 +53,6 @@ type Packages struct {
 }
 
 const (
-	lookup       = "E2E"
 	owner        = "vmware-tanzu"
 	repo         = "community-edition"
 	workflowsEnv = "WORKFLOWS" //To be set as csv values of workflows id
@@ -73,10 +73,14 @@ var mygh = &GitHub{
 
 func main() {
 	log.InitLogger("reporting")
-	handleRequests()
+	serveType := flag.String("type", "serve", "Use this flag for serving api server or getting static report")
+	flag.Parse()
+	if *serveType == "serve" {
+		handleRequests()
+	}
 }
 
-func (ghClient *GitHub) getResults() ([]byte, error) {
+func (ghClient *GitHub) getResult(date string) (Result, error) {
 	res := &Result{
 		Date:      fmt.Sprintf("%v", timeNow.Format(time.RFC822)),
 		Status:    "",
@@ -85,45 +89,27 @@ func (ghClient *GitHub) getResults() ([]byte, error) {
 	}
 
 	res.Status = "success"
-	res.Providers = mygh.getProviderResults()
-	res.Plugins = mygh.getPluginResults()
-	ParseJson, err := json.Marshal(res)
-	if err != nil {
-		log.Errorf("Error %s ", err)
-	}
-	log.Infof("%s", string(ParseJson))
-	return json.MarshalIndent(res, "", "  ")
-}
-
-func (ghClient *GitHub) getResultsStruct() (Result, error) {
-	res := &Result{
-		Date:      fmt.Sprintf("%v", timeNow.Format(time.RFC822)),
-		Status:    "",
-		BuildType: "daily",
-		Providers: []Providers{},
-	}
-
-	res.Status = "success"
-	res.Providers = mygh.getProviderResults()
-	res.Plugins = mygh.getPluginResults()
-
+	res.Providers = mygh.getProviderResults(date)
+	res.Plugins = mygh.getPluginResults(date)
+	log.Infof("%v", res)
 	return *res, nil
 }
 
 //Todo Remove Redundant code for provide and plugin
-func (ghClient *GitHub) getProviderResults() []Providers {
+func (ghClient *GitHub) getProviderResults(date string) []Providers {
 	workflows := strings.Split(os.Getenv(workflowsEnv), ",")
 	log.Infof("%s", workflows)
 	w := []Providers{}
 	for _, workflow := range workflows {
 		log.Infof("checking for workflow id %s", workflow)
 		w_id, _ := strconv.ParseInt(workflow, 10, 64)
-		run, err := ghClient.listWorkflowFromId(w_id)
+		run, err := ghClient.listWorkflowFromId(w_id, date)
 		if err != nil {
 			log.Errorf("Error %s ", err)
 		}
-		y := run.WorkflowRuns[1]
-		log.Infof("%s %s %s %s", *y.Conclusion, *y.Name, *y.CreatedAt, *y.HTMLURL)
+		y := run.WorkflowRuns[0]
+
+		log.Infof("%s %s ", *y.Conclusion, *y.Name)
 		runtime := y.UpdatedAt.Time.Sub(y.CreatedAt.Time).Minutes()
 		x := Providers{
 			Name:    *y.Name,
@@ -139,19 +125,19 @@ func (ghClient *GitHub) getProviderResults() []Providers {
 }
 
 //Todo Remove Redundant code for provide and plugin
-func (ghClient *GitHub) getPluginResults() []Plugins {
+func (ghClient *GitHub) getPluginResults(date string) []Plugins {
 	workflows := strings.Split(os.Getenv(pluginEnv), ",")
 	log.Infof("%s", workflows)
 	w := []Plugins{}
 	for _, workflow := range workflows {
 		log.Infof("checking for workflow id %s", workflow)
 		w_id, _ := strconv.ParseInt(workflow, 10, 64)
-		run, err := ghClient.listWorkflowFromId(w_id)
+		run, err := ghClient.listWorkflowFromId(w_id, date)
 		if err != nil {
 			log.Errorf("Error %s ", err)
 		}
-		y := run.WorkflowRuns[1]
-		log.Infof("%s %s %s %s", *y.Conclusion, *y.Name, *y.CreatedAt, *y.HTMLURL)
+		y := run.WorkflowRuns[0]
+		log.Infof("%s %s ", *y.Conclusion, *y.Name)
 		runtime := y.UpdatedAt.Time.Sub(y.CreatedAt.Time).Minutes()
 		x := Plugins{
 			Name:    *y.Name,
@@ -165,16 +151,12 @@ func (ghClient *GitHub) getPluginResults() []Plugins {
 	return w
 }
 
-func (ghClient *GitHub) listWorkflowFromId(workflowId int64) (*github.WorkflowRuns, error) {
-	opts := &github.ListWorkflowRunsOptions{
-		Actor:       "",
-		Branch:      "",
-		Event:       "",
-		Status:      "",
-		Created:     "",
-		ListOptions: github.ListOptions{},
+func (ghClient *GitHub) listWorkflowFromId(workflowId int64, date string) (*github.WorkflowRuns, error) {
+	opts := &github.ListWorkflowRunsOptions{}
+	if date != "" {
+		opts.Created = fmt.Sprintf("=%s", date)
 	}
-	runs, _, err := ghClient.client.Actions.ListWorkflowRunsByID(ctx, "vmware-tanzu", "community-edition", workflowId, opts)
+	runs, _, err := ghClient.client.Actions.ListWorkflowRunsByID(ctx, owner, repo, workflowId, opts)
 	if err != nil {
 		log.Errorf("Workflows Listing failed. Err: %v\n", err)
 		return nil, err
@@ -183,39 +165,12 @@ func (ghClient *GitHub) listWorkflowFromId(workflowId int64) (*github.WorkflowRu
 	return runs, nil
 }
 
-func (ghClient *GitHub) listWorkflows() ([]*github.WorkflowRuns, error) {
-	days := timeNow.AddDate(0, 0, -1).Format("2006-01-02")
-	opts := &github.ListWorkflowRunsOptions{Status: "failure", Created: fmt.Sprint(">", days)}
-	//opts := &github.ListWorkflowRunsOptions{Status: "failure", Created: ">2022-05-19"}
-	opt := &github.ListOptions{}
-	workflows, _, err := ghClient.client.Actions.ListWorkflows(ctx, owner, repo, opt)
-	if err != nil {
-		log.Errorf("Workflows Listing failed. Err: %v\n", err)
-		return nil, err
-	}
-	TceWorkflow := []*github.WorkflowRuns{}
-	for _, workflow := range workflows.Workflows {
-		if strings.Contains(*workflow.Name, lookup) {
-			log.Infof("%s %d", *workflow.Name, *workflow.ID)
-			runs, _, err := ghClient.client.Actions.ListWorkflowRunsByID(ctx, owner, repo, *workflow.ID, opts)
-			if err != nil {
-				log.Errorf("Workflows Listing failed. Err: %v\n", err)
-				return nil, err
-			}
-			TceWorkflow = append(TceWorkflow, runs)
-			//return runs, nil
-			log.Infof("%d", *runs.TotalCount)
-		}
-	}
-	return TceWorkflow, nil
-}
-
 func handleRequests() {
 	port := "8080"
 	log.Infof("Starting HTTP api server on localhost:%s", port)
 	http.HandleFunc("/", home)
 	http.HandleFunc("/viewjson", jsonview)
-	http.HandleFunc("/viewhtml", view)
+	http.HandleFunc("/viewhtml", viewhtml)
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
@@ -225,18 +180,23 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 func jsonview(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Trying to get Result for runs ")
-	res, _ := mygh.getResults()
-	w.Write(res)
+	date := r.URL.Query().Get("date")
+	res, _ := mygh.getResult(date)
+	results, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		log.Errorf("Error %s ", err)
+	}
+	w.Write(results)
 }
-func view(w http.ResponseWriter, r *http.Request) {
+func viewhtml(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Rendering HTML View")
-	x, _ := mygh.getResultsStruct()
+	date := r.URL.Query().Get("date")
+	results, _ := mygh.getResult(date)
 	t, _ := template.ParseFiles("templates/report.html")
-	err := t.Execute(w, &x)
+	err := t.Execute(w, &results)
 	if err != nil {
 		log.Errorf("Something went wrong")
 		return
 	}
-	log.Infof("%v", &x)
 
 }
