@@ -45,7 +45,7 @@ func TestRunProviderTest(t *testing.T) {
 			provider.EXPECT().CleanupCluster(gomock.Any(), "test-mgmt"),
 		)
 
-		err := utils.RunProviderTest(provider, r)
+		err := utils.RunProviderTest(provider, r, utils.Package{})
 		expectedError := "error while running management cluster: some error in management cluster creation"
 		if err.Error() != expectedError {
 			t.Logf("expected error to be: %v. But got: %v", expectedError, err)
@@ -101,7 +101,7 @@ func TestRunProviderTest(t *testing.T) {
 			r.EXPECT().DeleteContext("mock-config-path", "mock-context-2"),
 		)
 
-		err := utils.RunProviderTest(provider, r)
+		err := utils.RunProviderTest(provider, r, utils.Package{})
 		expectedError := "error while running workload cluster: some error in workload cluster creation"
 		if err.Error() != expectedError {
 			t.Logf("expected error to be: %v. But got: %v", expectedError, err)

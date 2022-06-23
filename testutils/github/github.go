@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/cli/cli/v2/git"
 	"github.com/cli/cli/v2/pkg/cmd/release/shared"
 )
 
@@ -50,4 +51,13 @@ func FetchTceRelease(releaseVersion string, token string) (*shared.Release, erro
 	return shared.FetchRelease(&http.Client{
 		Transport: client,
 	}, tceBaseRepo, releaseVersion)
+}
+
+func CloneRepo(URL string) error {
+	arg := []string{}
+	_, err := git.RunClone(URL, arg)
+	if err != nil {
+		return fmt.Errorf("error while creating GitHub client using token: %v", err)
+	}
+	return nil
 }
