@@ -7,6 +7,7 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/dockerprovider"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/github"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/tce"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 )
 
@@ -18,7 +19,7 @@ func TestCloneTCERepo(t *testing.T) {
 
 	log.InitLogger("docker-mgmt-wkld-e2e")
 
-	packageDetails := utils.Package{}
+	packageDetails := tce.Package{}
 	packageDetails.Name = os.Getenv("PACKAGE_NAME")
 	packageDetails.Version = os.Getenv("PACKAGE_VERSION")
 

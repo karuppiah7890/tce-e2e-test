@@ -15,6 +15,7 @@ import (
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/platforms"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/tanzu"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/tce"
 )
 
 // TODO: Further move the functions to specifics file/libs accordingly
@@ -28,11 +29,6 @@ type WorkloadCluster struct {
 	Status string `json:"status"`
 }
 type WorkloadClusters []WorkloadCluster
-
-type Package struct {
-	Name    string
-	Version string
-}
 
 var ManagementClusterType = ClusterType{Name: "management-cluster"}
 var WorkloadClusterType = ClusterType{Name: "cluster"}
@@ -234,7 +230,7 @@ func CheckRequiredEnvVars(provider Provider) error {
 	return nil
 }
 
-func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails Package) error {
+func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.Package) error {
 	r.RunChecks()
 
 	err := CheckRequiredEnvVars(provider)
@@ -305,37 +301,10 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails Pack
 	}
 
 	if packageDetails.Name != "" {
-		workDir, err := os.Getwd()
+		err = tce.PackageE2Etest(packageDetails)
 		if err != nil {
-			log.Errorf("error while getting working dir: %v", err)
-		}
-
-		err = os.Chdir("community-edition/addons/packages/" + packageDetails.Name + "/" + packageDetails.Version + "/test")
-		if err != nil {
-			log.Errorf("error while changing directory to community-edition: %v", err)
-		}
-		exitCode, err := clirunner.Run(clirunner.Cmd{
-			Name: "make",
-			Args: []string{
-				"e2e-test",
-			},
-			Stdout: log.InfoWriter,
-			// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-			// to standard error, which are kind of like information, apart from actual errors, so showing
-			// everything as error is misleading. Gotta think what to do about this. The main problem is
-			// console has only standard output and standard error, and tanzu is using standard output only for
-			// giving output for things like --dry-run when it needs to print yaml content, but everything else
-			// is printed to standard error
-			Stderr: log.ErrorWriter,
-		})
-
-		if err != nil {
-			log.Errorf("Error occurred while E2E test for %v. Exit code: %v. Error: %v", packageDetails.Name, exitCode, err)
-		}
-
-		err = os.Chdir(workDir)
-		if err != nil {
-			log.Errorf("error while changing directory to previous Directory: %v", err)
+			// Should we panic here and stop?
+			log.Errorf("error while running e2e test for %v: %v", packageDetails.Name, err)
 		}
 	}
 	// TODO: Consider testing one basic package or we can do this separately or have

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/tce"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/utils/mock_utils"
 )
@@ -45,7 +46,7 @@ func TestRunProviderTest(t *testing.T) {
 			provider.EXPECT().CleanupCluster(gomock.Any(), "test-mgmt"),
 		)
 
-		err := utils.RunProviderTest(provider, r, utils.Package{})
+		err := utils.RunProviderTest(provider, r, tce.Package{})
 		expectedError := "error while running management cluster: some error in management cluster creation"
 		if err.Error() != expectedError {
 			t.Logf("expected error to be: %v. But got: %v", expectedError, err)
@@ -101,7 +102,7 @@ func TestRunProviderTest(t *testing.T) {
 			r.EXPECT().DeleteContext("mock-config-path", "mock-context-2"),
 		)
 
-		err := utils.RunProviderTest(provider, r, utils.Package{})
+		err := utils.RunProviderTest(provider, r, tce.Package{})
 		expectedError := "error while running workload cluster: some error in workload cluster creation"
 		if err.Error() != expectedError {
 			t.Logf("expected error to be: %v. But got: %v", expectedError, err)

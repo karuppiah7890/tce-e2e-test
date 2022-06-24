@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-github/v44/github"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
-	"github.com/slack-go/slack"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/google/go-github/v44/github"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"github.com/slack-go/slack"
 )
 
 var ctx = context.Background()

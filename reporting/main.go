@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/google/go-github/v44/github"
-	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
-	"golang.org/x/oauth2"
 	"html/template"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/go-github/v44/github"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
+	"golang.org/x/oauth2"
 )
 
 var ctx = context.Background()
