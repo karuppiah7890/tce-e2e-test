@@ -304,29 +304,40 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails Pack
 		log.Errorf("error while printing workload cluster information: %v", err)
 	}
 
-	err = os.Chdir("community-edition/addons/packages/" + packageDetails.Name + "/" + packageDetails.Version + "/test")
-	if err != nil {
-		log.Errorf("error while changing directory to community-edition: %v", err)
-	}
-	exitCode, err := clirunner.Run(clirunner.Cmd{
-		Name: "make",
-		Args: []string{
-			"e2e-test",
-		},
-		Stdout: log.InfoWriter,
-		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
-		// to standard error, which are kind of like information, apart from actual errors, so showing
-		// everything as error is misleading. Gotta think what to do about this. The main problem is
-		// console has only standard output and standard error, and tanzu is using standard output only for
-		// giving output for things like --dry-run when it needs to print yaml content, but everything else
-		// is printed to standard error
-		Stderr: log.ErrorWriter,
-	})
+	if packageDetails.Name != "" {
+		workDir, err := os.Getwd()
+		if err != nil {
+			log.Errorf("error while getting working dir: %v", err)
+		}
 
-	if err != nil {
-		log.Fatalf("Error occurred while checking management cluster CLI plugin installation. Exit code: %v. Error: %v", exitCode, err)
-	}
+		err = os.Chdir("community-edition/addons/packages/" + packageDetails.Name + "/" + packageDetails.Version + "/test")
+		if err != nil {
+			log.Errorf("error while changing directory to community-edition: %v", err)
+		}
+		exitCode, err := clirunner.Run(clirunner.Cmd{
+			Name: "make",
+			Args: []string{
+				"e2e-test",
+			},
+			Stdout: log.InfoWriter,
+			// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+			// to standard error, which are kind of like information, apart from actual errors, so showing
+			// everything as error is misleading. Gotta think what to do about this. The main problem is
+			// console has only standard output and standard error, and tanzu is using standard output only for
+			// giving output for things like --dry-run when it needs to print yaml content, but everything else
+			// is printed to standard error
+			Stderr: log.ErrorWriter,
+		})
 
+		if err != nil {
+			log.Errorf("Error occurred while E2E test for %v. Exit code: %v. Error: %v", packageDetails.Name, exitCode, err)
+		}
+
+		err = os.Chdir(workDir)
+		if err != nil {
+			log.Errorf("error while changing directory to previous Directory: %v", err)
+		}
+	}
 	// TODO: Consider testing one basic package or we can do this separately or have
 	// a feature flag to test it when needed and skip it when not needed.
 	// This will give us an idea of how testing packages looks like and give an example
