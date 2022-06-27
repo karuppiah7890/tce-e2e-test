@@ -14,5 +14,8 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("aws-mgmt-wkld-e2e")
 
 	r := utils.DefaultClusterTestRunner{}
-	utils.RunProviderTest(aws.PROVIDER, r, tce.Package{})
+	err := utils.RunProviderTest(aws.PROVIDER, r, tce.Package{})
+	if err != nil {
+		t.Errorf("Error while running E2E test for managed and workload cluster on AWS: %v", err)
+	}
 }

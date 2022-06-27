@@ -14,5 +14,8 @@ func TestManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("vsphere-mgmt-wkld-e2e")
 
 	r := utils.DefaultClusterTestRunner{}
-	utils.RunProviderTest(vsphere.PROVIDER, r, tce.Package{})
+	err := utils.RunProviderTest(vsphere.PROVIDER, r, tce.Package{})
+	if err != nil {
+		t.Errorf("Error while running E2E test for managed and workload cluster on vSphere: %v", err)
+	}
 }

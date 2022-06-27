@@ -13,5 +13,8 @@ func TestAzureManagementAndWorkloadCluster(t *testing.T) {
 	log.InitLogger("azure-mgmt-wkld-e2e")
 
 	r := utils.DefaultClusterTestRunner{}
-	utils.RunProviderTest(azure.PROVIDER, r, tce.Package{})
+	err := utils.RunProviderTest(azure.PROVIDER, r, tce.Package{})
+	if err != nil {
+		t.Errorf("Error while running E2E test for managed and workload cluster on Azure: %v", err)
+	}
 }
