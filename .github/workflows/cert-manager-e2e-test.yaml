@@ -74,6 +74,7 @@ jobs:
           AZURE_SSH_PUBLIC_KEY_B64: ${{ secrets.AZURE_SSH_PUBLIC_KEY_B64 }}
           PACKAGE_NAME: "cert-manager"
           PACKAGE_VERSION: "1.8.0"
+          PROVIDER: "docker"
         run: |
           go test -v ./packages_e2e_test.go --timeout=2h
 
