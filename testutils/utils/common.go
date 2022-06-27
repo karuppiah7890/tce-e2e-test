@@ -301,7 +301,7 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 	}
 
 	if packageDetails.Name != "" {
-		err = tce.PackageE2Etest(packageDetails)
+		err = tce.PackageE2Etest(packageDetails, workloadClusterKubeContext)
 		if err != nil {
 			// Should we panic here and stop?
 			log.Errorf("error while running e2e test for %v: %v", packageDetails.Name, err)

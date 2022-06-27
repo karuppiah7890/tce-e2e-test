@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/karuppiah7890/tce-e2e-test/testutils/clirunner"
+	"github.com/karuppiah7890/tce-e2e-test/testutils/kubeclient"
 	"github.com/karuppiah7890/tce-e2e-test/testutils/log"
 )
 
@@ -13,7 +14,11 @@ type Package struct {
 	Version string
 }
 
-func PackageE2Etest(packageDetails Package) error {
+func PackageE2Etest(packageDetails Package, workloadClusterKubeContext string) error {
+	err := kubeclient.UseKubeConfigContext(workloadClusterKubeContext)
+	if err != nil {
+		return fmt.Errorf("error occurred while using the workload cluster context. error: %v", err)
+	}
 	exitCode, err := clirunner.Run(clirunner.Cmd{
 		Name: "tanzu",
 		Args: []string{
