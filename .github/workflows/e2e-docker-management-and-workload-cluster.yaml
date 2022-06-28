@@ -1,0 +1,56 @@
+name: E2E Test - Docker Management and Workload Cluster Go Lang
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - release-*
+    paths:
+      - "**.go"
+      - ".github/workflows/e2e-docker-management-and-workload-cluster.yaml"
+    tags-ignore:
+      - "**"
+jobs:
+  e2e-docker-management-cluster-test:
+    name: E2E Docker Management and Workload Cluster Test
+    if: github.repository == 'karuppiah7890/tce-e2e-test'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.17"
+        id: go
+
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Get Date
+        id: get-date
+        shell: bash
+        run: |
+          echo "::set-output name=date::$(date -u "+%Y-%m")"
+
+      - name: Restore Go Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run Docker Management and Workload Cluster E2E Test
+        env:
+          DAILY_BUILD: ${{ github.event.client_payload.daily-build }}
+        run: |
+          go test -v ./docker_test.go --timeout=2h 
+
+      - name: Collect tanzu diagnostics data
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: diagnostics-data
+          path: |
+            bootstrap.*.diagnostics.tar.gz
+            management-cluster.*.diagnostics.tar.gz
+            workload-cluster.*.diagnostics.tar.gz

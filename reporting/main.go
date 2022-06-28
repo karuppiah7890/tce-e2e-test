@@ -155,9 +155,10 @@ func (ghClient *GitHub) getPluginResults(date string) []Plugins {
 func (ghClient *GitHub) listWorkflowFromId(workflowId int64, date string) (*github.WorkflowRuns, error) {
 	opts := &github.ListWorkflowRunsOptions{}
 	if date != "" {
-		opts.Created = fmt.Sprintf("=%s", date)
+		opts = &github.ListWorkflowRunsOptions{Created: fmt.Sprintf("=%s", date)}
 	}
 	runs, _, err := ghClient.client.Actions.ListWorkflowRunsByID(ctx, owner, repo, workflowId, opts)
+	//log.Infof("Getting from Date %s \n %v", date, opts)
 	if err != nil {
 		log.Errorf("Workflows Listing failed. Err: %v\n", err)
 		return nil, err
@@ -175,7 +176,7 @@ func handleRequests() {
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
-func home(w http.ResponseWriter, r *http.Request) {
+func home(w http.ResponseWriter, _ *http.Request) {
 	fmt.Fprintf(w, "Welcome to the HomePage!")
 }
 
