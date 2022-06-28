@@ -1,5 +1,5 @@
 ---
-name: E2E Test - Cert-manager
+name: E2E Test - local-path-storage
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
       - release-*
     paths:
       - "**.go"
-      - ".github/workflows/cert-manager-e2e-test.yaml"
+      - ".github/workflows/local-path-storage-e2e-test.yaml"
       - "packages_e2e_test.go"
     tags-ignore:
       - "**"
@@ -34,10 +34,10 @@ jobs:
           echo "INSTANCE_NAME: ${INSTANCE_NAME}"
           echo ::set-output name=ec2-instance-id::${INSTANCE_NAME}
 
-  cert-manager-e2e-test:
+  local-path-storage-e2e-test:
     # Only run this job if we're in the main repo, not a fork.
     if: github.repository == 'karuppiah7890/tce-e2e-test'
-    name: Cert-manager E2E Test
+    name: local-path-storage E2E Test
     needs: setup-runner # required to start the main job when the runner is ready
     runs-on: ${{ needs.setup-runner.outputs.ec2-instance-id }} # run the job on the newly created runner
     steps:
@@ -64,7 +64,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Run Cert-manager E2E Tests
+      - name: Run local-path-storage E2E Tests
         env:
           DAILY_BUILD: ${{ github.event.client_payload.daily-build }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
@@ -72,9 +72,9 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_SSH_PUBLIC_KEY_B64: ${{ secrets.AZURE_SSH_PUBLIC_KEY_B64 }}
-          PACKAGE_NAME: "cert-manager"
-          PACKAGE_VERSION: "1.8.0"
-          PROVIDER: "docker"
+          PACKAGE_NAME: "local-path-storage"
+          PACKAGE_VERSION: "0.0.22"
+          PROVIDER: "azure"
         run: |
           go test -v ./packages_e2e_test.go --timeout=2h
 
@@ -94,7 +94,7 @@ jobs:
     if: github.repository == 'karuppiah7890/tce-e2e-test'
     needs:
       - setup-runner # required to get output from the setup-runner job
-      - cert-manager-e2e-test # required to wait when the main job is done
+      - local-path-storage-e2e-test # required to wait when the main job is done
     runs-on: ubuntu-latest
     steps:
       - name: Stop EC2 runner
