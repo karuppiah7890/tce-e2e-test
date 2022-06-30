@@ -8,6 +8,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v0.13.2
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/marketplaceordering/armmarketplaceordering v0.2.1
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v0.3.1
+	github.com/aws/aws-sdk-go v1.40.56
 	github.com/aws/aws-sdk-go-v2/config v1.15.3
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.26.5
 	github.com/cli/cli/v2 v2.10.1
@@ -141,6 +142,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b // indirect

@@ -23,6 +23,7 @@ func TestCloneTCERepo(t *testing.T) {
 	packageDetails := tce.Package{}
 	packageDetails.Name = os.Getenv("PACKAGE_NAME")
 	packageDetails.Version = os.Getenv("PACKAGE_VERSION")
+	packageDetails.ManualCreate = true
 	provider := os.Getenv("PROVIDER")
 
 	log.InitLogger(provider + "-mgmt-wkld-e2e")
@@ -44,7 +45,9 @@ func TestCloneTCERepo(t *testing.T) {
 		// Invalid provider in PROVIDER env variable
 		t.Errorf("Ivalid provider for package E2E Test")
 	}
-
+	if packageDetails.Name == "velero" {
+		aws.EmptyS3Bucket()
+	}
 	if err != nil {
 		t.Errorf("Error while running package E2E test on %v: %v", provider, err)
 	}

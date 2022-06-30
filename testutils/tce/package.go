@@ -10,8 +10,9 @@ import (
 )
 
 type Package struct {
-	Name    string
-	Version string
+	Name         string
+	Version      string
+	ManualCreate bool
 }
 
 func PackageE2Etest(packageDetails Package, workloadClusterKubeContext string) error {
@@ -44,6 +45,13 @@ func PackageE2Etest(packageDetails Package, workloadClusterKubeContext string) e
 		return fmt.Errorf("error occurred while adding package repo. exit code: %v. error: %v", exitCode, err)
 	}
 
+	if packageDetails.ManualCreate {
+		err := InstallPackage(packageDetails)
+		if err != nil {
+			return fmt.Errorf("%v", err)
+		}
+	}
+
 	err = os.Chdir("community-edition/addons/packages/" + packageDetails.Name + "/" + packageDetails.Version + "/test")
 	if err != nil {
 		return fmt.Errorf("error while changing directory to community-edition: %v", err)
@@ -63,8 +71,70 @@ func PackageE2Etest(packageDetails Package, workloadClusterKubeContext string) e
 		Stderr: log.ErrorWriter,
 	})
 
+	if packageDetails.ManualCreate {
+		err := DeletePackage(packageDetails)
+		if err != nil {
+			return fmt.Errorf("%v", err)
+		}
+
+	}
+
 	if err != nil {
 		return fmt.Errorf("error occurred while E2E test for %v. Exit code: %v. Error: %v", packageDetails.Name, exitCode, err)
+	}
+
+	return nil
+}
+
+func InstallPackage(packageDetails Package) error {
+	wd, _ := os.Getwd()
+	exitCode, err := clirunner.Run(clirunner.Cmd{
+		Name: "tanzu",
+		Args: []string{
+			"package",
+			"install",
+			packageDetails.Name,
+			"--package-name",
+			packageDetails.Name + ".community.tanzu.vmware.com",
+			"--version", packageDetails.Version,
+			"--values-file", wd + "/testutils/tce/testdata/" + packageDetails.Name + "_values.yaml",
+		},
+		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
+		Stderr: log.ErrorWriter,
+	})
+	if err != nil {
+		return fmt.Errorf("error occurred while installing %v package. exit code: %v. error: %v", packageDetails.Name, exitCode, err)
+	}
+	return nil
+}
+
+func DeletePackage(packageDetails Package) error {
+	exitCode, err := clirunner.Run(clirunner.Cmd{
+		Name: "tanzu",
+		Args: []string{
+			"package",
+			"installed",
+			"delete",
+			packageDetails.Name,
+			"-y",
+		},
+		Stdout: log.InfoWriter,
+		// TODO: Should we log standard errors as errors in the log? Because tanzu prints other information also
+		// to standard error, which are kind of like information, apart from actual errors, so showing
+		// everything as error is misleading. Gotta think what to do about this. The main problem is
+		// console has only standard output and standard error, and tanzu is using standard output only for
+		// giving output for things like --dry-run when it needs to print yaml content, but everything else
+		// is printed to standard error
+		Stderr: log.ErrorWriter,
+	})
+	if err != nil {
+		return fmt.Errorf("error occurred while deleting %v package. exit code: %v. error: %v", packageDetails.Name, exitCode, err)
 	}
 	return nil
 }
