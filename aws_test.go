@@ -30,6 +30,4 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 	utils.removePackage('package',kubecontext)
 	utils.removeWkldCluster(provider,'clustername')
 	utils.removeMgmtCluster(provider,'clustername')
-
-
 */

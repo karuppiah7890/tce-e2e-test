@@ -231,27 +231,60 @@ func CheckRequiredEnvVars(provider Provider) error {
 }
 
 func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.Package) error {
-	r.RunChecks()
-	// Setup Function
-	err := CheckRequiredEnvVars(provider)
-	if err != nil {
-		return fmt.Errorf("errors while checking required environment variables: %v", err)
-	}
-
-	provider.Init()
+	// Setup
+	setupEnv(provider, r)
 	// Setup Function complete
 	managementClusterName, workloadClusterName := r.GetRandomClusterNames()
 
 	// createManagementCluster function start
-	err = provider.PreClusterCreationTasks(managementClusterName, ManagementClusterType)
+	createManagementCluster(provider, r, managementClusterName)
+	// createManagementCluster Complete
+
+	// Create Wkld Cluster Start
+	createWorkloadCluster(provider, r, managementClusterName, workloadClusterName)
+	// Create Wkld Cluster complete
+
+	// package Code
+	runPackageTest(r, packageDetails, workloadClusterName)
+	// Package Code complete
+
+	// TODO: Consider testing one basic package or we can do this separately or have
+	// a feature flag to test it when needed and skip it when not needed.
+	// This will give us an idea of how testing packages looks like and give an example
+	// to TCE package owners
+
+	// TODO: Handle errors during cluster deletion
+	// and cleanup management cluster and then cleanup workload cluster
+
+	// delete Wkld Cluster start
+	deleteWorkloadCluster(provider, r, workloadClusterName, managementClusterName)
+	// Delete wkld cluster complete
+	// TODO: Handle errors during cluster deletion
+	// and cleanup management cluster
+	// Delete mgmt cluster start
+	deleteManagementCluster(provider, r, managementClusterName)
+	// Delete mgmt cluster complete
+	return nil
+}
+
+func setupEnv(provider Provider, r ClusterTestRunner) {
+	r.RunChecks()
+	err := CheckRequiredEnvVars(provider)
 	if err != nil {
-		return fmt.Errorf("error while executing pre-cluster creation tasks for %v cluster: %v", managementClusterName, err)
+		log.Errorf("errors while checking required environment variables: %v", err)
+	}
+	provider.Init()
+}
+func createManagementCluster(provider Provider, r ClusterTestRunner, managementClusterName string) {
+	err := provider.PreClusterCreationTasks(managementClusterName, ManagementClusterType)
+	if err != nil {
+		log.Errorf("error while executing pre-cluster creation tasks for %v cluster: %v", managementClusterName, err)
 	}
 
 	managementClusterKubeContext := r.GetKubeContextForTanzuCluster(managementClusterName)
 	kubeConfigPath, err := r.GetKubeConfigPath()
 	if err != nil {
-		return fmt.Errorf("error while getting kubeconfig path: %v", err)
+		log.Errorf("error while getting kubeconfig path: %v", err)
 	}
 
 	err = r.RunCluster(managementClusterName, provider, ManagementClusterType)
@@ -259,7 +292,7 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 		runManagementClusterErr := err
 		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
 		ManagementClusterCreationFailureTasks(context.TODO(), r, managementClusterName, kubeConfigPath, managementClusterKubeContext, provider)
-		return fmt.Errorf("error while running management cluster: %v", runManagementClusterErr)
+		log.Errorf("error while running management cluster: %v", runManagementClusterErr)
 	}
 
 	// TODO: Handle errors
@@ -271,16 +304,17 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 		// Should we panic here and stop?
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
-	// createManagementCluster Complete
+}
 
-	// Create Wkld Cluster Start
-	err = provider.PreClusterCreationTasks(workloadClusterName, WorkloadClusterType)
+func createWorkloadCluster(provider Provider, r ClusterTestRunner, managementClusterName, workloadClusterName string) {
+	err := provider.PreClusterCreationTasks(workloadClusterName, WorkloadClusterType)
 	if err != nil {
-		return fmt.Errorf("error while executing pre-cluster creation tasks for %v cluster: %v", err, workloadClusterName)
+		log.Errorf("error while executing pre-cluster creation tasks for %v cluster: %v", err, workloadClusterName)
 	}
 
 	workloadClusterKubeContext := r.GetKubeContextForTanzuCluster(workloadClusterName)
-
+	kubeConfigPath, err := r.GetKubeConfigPath()
+	managementClusterKubeContext := r.GetKubeContextForTanzuCluster(managementClusterName)
 	err = r.RunCluster(workloadClusterName, provider, WorkloadClusterType)
 	if err != nil {
 		runWorkloadClusterErr := err
@@ -288,7 +322,7 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 
 		WorkloadClusterCreationFailureTasks(context.TODO(), r, managementClusterName, workloadClusterName, kubeConfigPath, managementClusterKubeContext, workloadClusterKubeContext, provider)
 
-		return fmt.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
+		log.Errorf("error while running workload cluster: %v", runWorkloadClusterErr)
 	}
 
 	r.CheckWorkloadClusterIsRunning(workloadClusterName)
@@ -302,29 +336,21 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 		// Should we panic here and stop?
 		log.Errorf("error while printing workload cluster information: %v", err)
 	}
-	// Create Wkld Cluster complete
+}
 
-	// package Code
+func runPackageTest(r ClusterTestRunner, packageDetails tce.Package, workloadClusterName string) {
+	workloadClusterKubeContext := r.GetKubeContextForTanzuCluster(workloadClusterName)
 	if packageDetails.Name != "" {
-		err = tce.PackageE2Etest(packageDetails, workloadClusterKubeContext)
+		err := tce.PackageE2Etest(packageDetails, workloadClusterKubeContext)
 		if err != nil {
 			// Should we panic here and stop?
 			log.Errorf("error while running e2e test for %v: %v", packageDetails.Name, err)
 		}
 	}
+}
 
-	// Package Code complete
-
-	// TODO: Consider testing one basic package or we can do this separately or have
-	// a feature flag to test it when needed and skip it when not needed.
-	// This will give us an idea of how testing packages looks like and give an example
-	// to TCE package owners
-
-	// TODO: Handle errors during cluster deletion
-	// and cleanup management cluster and then cleanup workload cluster
-
-	// delete Wkld Cluster start
-	err = r.DeleteCluster(workloadClusterName, provider, WorkloadClusterType)
+func deleteWorkloadCluster(provider Provider, r ClusterTestRunner, workloadClusterName, managementClusterName string) {
+	err := r.DeleteCluster(workloadClusterName, provider, WorkloadClusterType)
 	if err != nil {
 		log.Errorf("error while deleting workload cluster: %v", err)
 
@@ -333,7 +359,7 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 			log.Errorf("error while collecting diagnostics of management cluster and workload cluster: %v", err)
 		}
 
-		return fmt.Errorf("error while deleting workload cluster: %v", err)
+		log.Errorf("error while deleting workload cluster: %v", err)
 	}
 
 	// TODO: Handle errors during waiting for cluster deletion.
@@ -341,28 +367,26 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 	// If all retries fail, cleanup management cluster and then cleanup workload cluster
 	err = r.WaitForWorkloadClusterDeletion(workloadClusterName)
 	if err != nil {
-		return fmt.Errorf("error while waiting for workload cluster deletion: %v", err)
+		log.Errorf("error while waiting for workload cluster deletion: %v", err)
 	}
-
+	kubeConfigPath, err := r.GetKubeConfigPath()
+	workloadClusterKubeContext := r.GetKubeContextForTanzuCluster(workloadClusterName)
+	managementClusterKubeContext := r.GetKubeContextForTanzuCluster(managementClusterName)
 	err = kubeclient.DeleteContext(kubeConfigPath, workloadClusterKubeContext)
 	if err != nil {
 		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 	}
-	// Delete wkld cluster complete
-	// TODO: Handle errors during cluster deletion
-	// and cleanup management cluster
-	// Delete mgmt cluster start
-	err = r.DeleteCluster(managementClusterName, provider, ManagementClusterType)
+
+}
+
+func deleteManagementCluster(provider Provider, r ClusterTestRunner, managementClusterName string) {
+	err := r.DeleteCluster(managementClusterName, provider, ManagementClusterType)
 	if err != nil {
 		log.Errorf("error while deleting management cluster: %v", err)
-
 		err := tanzu.CollectManagementClusterDiagnostics(managementClusterName)
 		if err != nil {
 			log.Errorf("error while collecting diagnostics of management cluster: %v", err)
 		}
-
-		return fmt.Errorf("error while deleting management cluster: %v", err)
+		log.Errorf("error while deleting management cluster: %v", err)
 	}
-	// Delete mgmt cluster complete
-	return nil
 }
