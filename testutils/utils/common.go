@@ -232,16 +232,17 @@ func CheckRequiredEnvVars(provider Provider) error {
 
 func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.Package) error {
 	r.RunChecks()
-
+	// Setup Function
 	err := CheckRequiredEnvVars(provider)
 	if err != nil {
 		return fmt.Errorf("errors while checking required environment variables: %v", err)
 	}
 
 	provider.Init()
-
+	// Setup Function complete
 	managementClusterName, workloadClusterName := r.GetRandomClusterNames()
 
+	// createManagementCluster function start
 	err = provider.PreClusterCreationTasks(managementClusterName, ManagementClusterType)
 	if err != nil {
 		return fmt.Errorf("error while executing pre-cluster creation tasks for %v cluster: %v", managementClusterName, err)
@@ -270,7 +271,9 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 		// Should we panic here and stop?
 		log.Errorf("error while printing management cluster information: %v", err)
 	}
+	// createManagementCluster Complete
 
+	// Create Wkld Cluster Start
 	err = provider.PreClusterCreationTasks(workloadClusterName, WorkloadClusterType)
 	if err != nil {
 		return fmt.Errorf("error while executing pre-cluster creation tasks for %v cluster: %v", err, workloadClusterName)
@@ -299,7 +302,9 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 		// Should we panic here and stop?
 		log.Errorf("error while printing workload cluster information: %v", err)
 	}
+	// Create Wkld Cluster complete
 
+	// package Code
 	if packageDetails.Name != "" {
 		err = tce.PackageE2Etest(packageDetails, workloadClusterKubeContext)
 		if err != nil {
@@ -307,6 +312,9 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 			log.Errorf("error while running e2e test for %v: %v", packageDetails.Name, err)
 		}
 	}
+
+	// Package Code complete
+
 	// TODO: Consider testing one basic package or we can do this separately or have
 	// a feature flag to test it when needed and skip it when not needed.
 	// This will give us an idea of how testing packages looks like and give an example
@@ -314,6 +322,8 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster and then cleanup workload cluster
+
+	// delete Wkld Cluster start
 	err = r.DeleteCluster(workloadClusterName, provider, WorkloadClusterType)
 	if err != nil {
 		log.Errorf("error while deleting workload cluster: %v", err)
@@ -338,9 +348,10 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 	if err != nil {
 		log.Errorf("error while deleting kube context %s at kubeconfig path: %v", managementClusterKubeContext, err)
 	}
-
+	// Delete wkld cluster complete
 	// TODO: Handle errors during cluster deletion
 	// and cleanup management cluster
+	// Delete mgmt cluster start
 	err = r.DeleteCluster(managementClusterName, provider, ManagementClusterType)
 	if err != nil {
 		log.Errorf("error while deleting management cluster: %v", err)
@@ -352,6 +363,6 @@ func RunProviderTest(provider Provider, r ClusterTestRunner, packageDetails tce.
 
 		return fmt.Errorf("error while deleting management cluster: %v", err)
 	}
-
+	// Delete mgmt cluster complete
 	return nil
 }

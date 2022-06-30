@@ -19,3 +19,17 @@ func TestAwsManagementAndWorkloadCluster(t *testing.T) {
 		t.Errorf("Error while running E2E test for managed and workload cluster on AWS: %v", err)
 	}
 }
+
+/*
+
+	utils.createManagementCluster(provider,'Clustername')
+	utils.createWorkloadCluster(provider,'clustername')
+	utils.runPackageTest('package',kubecontext)
+	utils.runKubectlCommand('Command',kubecontext)
+
+	utils.removePackage('package',kubecontext)
+	utils.removeWkldCluster(provider,'clustername')
+	utils.removeMgmtCluster(provider,'clustername')
+
+
+*/
