@@ -45,6 +45,7 @@ func PackageE2Etest(packageDetails Package, workloadClusterKubeContext string) e
 		return fmt.Errorf("error occurred while adding package repo. exit code: %v. error: %v", exitCode, err)
 	}
 
+	//Prerequisites(packageDetails)
 	if packageDetails.ManualCreate {
 		err := InstallPackage(packageDetails)
 		if err != nil {
@@ -138,3 +139,38 @@ func DeletePackage(packageDetails Package) error {
 	}
 	return nil
 }
+
+/*func TestPrerequisites(t *testing.T) {
+	packageDetails := Package{}
+	packageDetails.Name = "velero"   //os.Getenv("PACKAGE_NAME")
+	packageDetails.Version = "1.8.0" //os.Getenv("PACKAGE_VERSION")
+	packageDetails.ManualCreate = true
+	wd, _ := os.Getwd()
+	configFilePath := wd + "/testdata/" + packageDetails.Name + "_values.yaml"
+	configTempFilePath := wd + "/testdata/" + packageDetails.Name + "_temp_values.yaml"
+	if packageDetails.Name == "velero" {
+		err := testutils.Copy(configFilePath, configTempFilePath)
+		//t.Errorf("%v", err)
+		file, err := ioutil.ReadFile(configFilePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		data := make(map[interface{}]interface{})
+		error := yaml.Unmarshal([]byte(file), &data)
+		if error != nil {
+			fmt.Println("testingggg ", configTempFilePath, error)
+			log.Fatal(err)
+		}
+
+		for key, value := range data {
+
+			fmt.Println(key, " //// ", value)
+		}
+
+		//dbURL := os.ExpandEnv(data)
+		//fmt.Println(data)
+	}
+
+	//return nil
+}*/
